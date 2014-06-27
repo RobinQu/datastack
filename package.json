@@ -4,7 +4,7 @@
   "description": "CloudKit implementation in Node",
   "main": "index.js",
   "scripts": {
-    "test": "npm test"
+    "test": "NODE_ENV=test ./node_modules/mocha/bin/mocha --harmony test/"
   },
   "repository": {
     "type": "git",
@@ -23,5 +23,12 @@
   "bugs": {
     "url": "https://github.com/RobinQu/datastack/issues"
   },
-  "homepage": "https://github.com/RobinQu/datastack"
+  "homepage": "https://github.com/RobinQu/datastack",
+  "devDependencies": {
+    "mocha": "^1.20.1",
+    "chai": "^1.9.1"
+  },
+  "dependencies": {
+    "es6-shim": "^0.13.0"
+  }
 }
