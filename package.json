@@ -4,7 +4,7 @@
   "description": "CloudKit implementation in Node",
   "main": "./src/datastack.js",
   "scripts": {
-    "test": "npm test"
+    "test": "NODE_ENV=test mocha --harmony --recursive ./spec"
   },
   "repository": {
     "type": "git",
@@ -29,6 +29,18 @@
     "pkginfo": "^0.3.0",
     "koa-app": "^0.1.1",
     "co": "^3.0.6",
-    "lingo": "^0.0.5"
+    "lingo": "^0.0.5",
+    "koa-router": "^3.1.4",
+    "lodash": "^2.4.1",
+    "debug": "^1.0.2"
+  },
+  "devDependencies": {
+    "superagent": "^0.18.0",
+    "superagent-prefix": "0.0.2",
+    "chai": "^1.9.1",
+    "sinon": "^1.10.2",
+    "mocha": "^1.20.1",
+    "koa": "^0.8.1",
+    "deep-eql": "^0.1.3"
   }
 }

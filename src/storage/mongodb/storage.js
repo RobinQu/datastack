@@ -1,10 +1,12 @@
 var mongo = require("co-mongo"),
     co = require("co"),
     Collection = require("./collection"),
-    _ = require("lodash");
+    _ = require("lodash"),
+    defaults = require("./defaults");
 
 var MongoStorage = function(options) {
   this.uri = options.uri;
+  defaults.setOptions(["idKey", "objectAsKey", "writeConcern", "timestamp"], options, this);
 };
 
 var UpdateOperators = ["$set", "$inc", "$mul", "$rename", "$setOnInsert", "$unset", "$min", "$max", "$currentDate"];
@@ -33,14 +35,23 @@ MongoStorage.prototype.middleware = function () {
 };
 
 MongoStorage.prototype.collection = function(name) {
+  var self = this;
   return co(function*() {
     var col = yield this.db.collection(name);
     //we use a wrapper to adapat
-    yield new Collection(col);
+    yield new Collection(col, {
+      idKey: self.idKey,
+      objectIdAsId: self.objectIdAsId,
+      writeConcern: self.writeConcern
+    });
   });
 };
 
 MongoStorage.prototype.buildSort = function (sort) {
+  if(!sort) {//return default sort if none is given
+    return this.timestamp ? [["ctime", -1]] : [];
+  }
+  
   if(typeof sort === "string") {
     // String pattern: a:1,b:-1
     return sort.split(",").reduce(function(prev, cur) {

@@ -1,12 +1,7 @@
-var _ = require("lodash");
-
-module.exports = function(options) {
+module.exports = {
   
-  _.extend(options, {
-    
-  });
+  pagination: require("./pagination"),
   
-  return function*() {
-    this.query.
-  };
+  query: require("./query")
+  
 };

@@ -1,15 +1,15 @@
 var _ = require("lodash");
 
 module.exports = function(options) {
-  _.extend(options, {
-    limit: 20,
-    skip: 0
-  });
+  var defaults = _.extend({
+    skip: 0,
+    limit: 20
+  }, options || {});
   return function*(next) {
-    this.pagination = _.extend({}, options, {
-      skip: this.query.skip,
-      limit: this.query.skip
-    });
+    this.pagination = {};
+    this.pagination.skip = this.query.skip || defaults.skip;
+    this.pagination.limit = this.query.limit || defaults.limit;
+    // console.log(this.pagination);
     yield next;
   };
 };
