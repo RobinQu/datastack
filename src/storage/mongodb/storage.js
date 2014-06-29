@@ -17,6 +17,21 @@ MongoStorage.prototype.disconnect = co(function*() {
   yield this.db.close();
 });
 
+MongoStorage.prototype.middleware = function () {
+  var self = this;
+  return function*(next) {
+    // `this` refers to the koa context
+    if(this.query.sort) {
+      this.sort = self.storage.buildSort(this.query.sort);
+    }
+    if(this.query.conditions) {
+      this.condtions = self.storage.buildQuery(this);
+    }
+    this.collection = self.storage.collection.bind(self.storage);
+    yield next;
+  };
+};
+
 MongoStorage.prototype.collection = function(name) {
   return co(function*() {
     var col = yield this.db.collection(name);

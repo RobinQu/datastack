@@ -23,5 +23,12 @@
   "bugs": {
     "url": "https://github.com/RobinQu/datastack/issues"
   },
-  "homepage": "https://github.com/RobinQu/datastack"
+  "homepage": "https://github.com/RobinQu/datastack",
+  "dependencies": {
+    "co-mongo": "0.0.2",
+    "pkginfo": "^0.3.0",
+    "koa-app": "^0.1.1",
+    "co": "^3.0.6",
+    "lingo": "^0.0.5"
+  }
 }

@@ -16,6 +16,7 @@ var Datastack = function(app, options) {
   } catch(e) {
     throw new Error("Unsupported storage type " + options.type);
   }
+  
   // auto connect
   this.storage.connect();
   this.hook(app);
@@ -24,15 +25,13 @@ var Datastack = function(app, options) {
 Datastack.prototype.hook = function(app) {
   var self = this;
   app.use(function*(next) {
-    if(this.query.sort) {
-      this.sort = self.storage.buildSort(this.query.sort);
-    }
-    if(this.query.conditions) {
-      this.condtions = self.storage.buildQuery(this);
-    }
-    this.collection = self.storage.collection.bind(self.storage);
+    //report version and vendor
+    this.set("x-powered-by", "datastack");
+    this.set("x-datastack-version", Datastack.version);
     yield next;
   });
+  
+  app.use(self.storage.middleware());
 };
 
 Datastack.prototype.teardown = function () {
@@ -41,9 +40,8 @@ Datastack.prototype.teardown = function () {
 
 var datastack = module.exports = Datastack;
 
+require("pkginfo")(module, "version");
+
 datastack.resource = require("./stack_resource");
 
 datastack.app = require("./stack_app");
-
-
-
