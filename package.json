@@ -2,7 +2,7 @@
   "name": "datastack",
   "version": "0.1.0",
   "description": "CloudKit implementation in Node",
-  "main": "index.js",
+  "main": "./src/datastack.js",
   "scripts": {
     "test": "npm test"
   },
