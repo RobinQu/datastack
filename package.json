@@ -4,7 +4,7 @@
   "description": "CloudKit implementation in Node",
   "main": "./src/datastack.js",
   "scripts": {
-    "test": "NODE_ENV=test mocha --harmony --recursive ./spec"
+    "test": "NODE_ENV=test ./node_modules/mocha/bin/mocha --harmony --recursive ./spec"
   },
   "repository": {
     "type": "git",
