@@ -66,7 +66,7 @@ describe("Router", function() {
     this.storage.buildSort = function() {
       return [["ctime", -1]];
     };
-    this.storage.buildProjection = this.storage.buildQuery = function(p) {
+    this.storage.buildProjection = this.storage.buildCriteria = function(p) {
       return p || {};
     };
     

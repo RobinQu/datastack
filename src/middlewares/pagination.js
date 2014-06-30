@@ -7,8 +7,8 @@ module.exports = function(options) {
   }, options || {});
   return function*(next) {
     this.pagination = {};
-    this.pagination.skip = this.query.skip || defaults.skip;
-    this.pagination.limit = this.query.limit || defaults.limit;
+    this.pagination.skip = parseInt(this.query.skip, 10) || defaults.skip;
+    this.pagination.limit = parseInt(this.query.limit, 10) || defaults.limit;
     // console.log(this.pagination);
     yield next;
   };

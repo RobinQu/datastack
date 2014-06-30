@@ -55,10 +55,10 @@ Storage.prototype.buildUpdate = function(update) {
   return update;
 };
 
-// `buildQuery` handles the query input for underlying database
+// `buildCriteria` handles the query input for underlying database
 // This is vendor specific
 // * `query`: the query object from request query (`this.query.criteria`)
-Storage.prototype.buildQuery = function(query) {
+Storage.prototype.buildCriteria = function(query) {
   debug("build criteria %o", query);
   return query ? JSON.parse(decodeURIComponent(query)) : {};
 };

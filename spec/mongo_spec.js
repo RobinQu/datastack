@@ -1,4 +1,4 @@
-/*global describe, it, before, after */
+/*global describe, it, before, after, beforeEach */
 
 var datastack = require(".."),
     request = require("superagent"),
@@ -98,6 +98,55 @@ describe("Mongo storage", function() {
     
   });
   
+  
+  describe("index", function() {
+    
+    beforeEach(co(function*() {
+      //clean all records
+      var col = yield app.context.storage.collection("books");
+      debug("remove all docs of book collection");
+      yield col._col.remove();
+    }));
+    
+    it("should find by query and projection", function(done) {
+      request.post("http://localhost:8888/books")
+      .send([{a:1, b:2}, {a:2, c:3}, {a:2, b:2}]).end(function(res) {
+        expect(res.status).to.equal(201);
+        request.get("http://localhost:8888/books").query({
+          criteria: encodeURIComponent(JSON.stringify({a:1})),
+          projection: encodeURIComponent(JSON.stringify({a:1}))
+        }).end(function(res) {
+          expect(res.status).to.equal(200);
+          expect(res.body.length).to.equal(1);
+          expect(res.body[0].a).to.equal(1);
+          //`b` should be undefiend
+          expect(res.body[0].b).not.to.be.ok;
+          done();
+        });
+      });
+    });
+    
+    
+    it("should work with pagination", function(done) {
+      request.post("http://localhost:8888/books")
+      .send([{a:1, b:2}, {a:2, c:3}, {a:2, b:2}]).end(function(res) {
+        expect(res.status).to.equal(201);
+        request.get("http://localhost:8888/books").query({
+          skip: 2,
+          limit: 1
+        }).end(function(res) {
+          expect(res.status).to.equal(200);
+          expect(res.body[0].a).to.equal(2);
+          expect(res.body[0].b).to.equal(2);
+          done();
+        });
+      });
+    });
+    
+    
+    
+  });
+  
   describe("update", function() {
     
     it("should update the created record", function(done) {
@@ -151,8 +200,6 @@ describe("Mongo storage", function() {
     });
     
   });
-  
-  
   
   
 });
