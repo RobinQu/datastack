@@ -1,12 +1,18 @@
+var debug = require("debug")("datastack");
+
 var Datastack = function(app, options) {
   if(!(this instanceof Datastack)) {
     return new Datastack(app, options);
   }
+  
   if(app.context.datastack) {
     console.log("Cannot hook this koa app more than once");
     return app.context.datastack;
   }
-  app.context.datastack = new Datastack(options);
+  
+  //TODO: use memory storage as fallback
+  options = options || {};
+  
   try {
     //TODO: support more `Storage` instance
     this.storage = (function() {
@@ -24,7 +30,11 @@ var Datastack = function(app, options) {
 
 Datastack.prototype.hook = function(app) {
   var self = this;
-  app.use(function*(next) {
+  debug("hook");
+  app.context.datastack = this;
+  app.context.storage = this.storage;
+  app.use(require("koa-bodyparser")());
+  app.use(function* datastack(next) {
     //report version and vendor
     this.set("x-powered-by", "datastack");
     this.set("x-datastack-version", Datastack.version);

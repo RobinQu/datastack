@@ -1,4 +1,4 @@
-/*global describe, it, before */
+/*global describe, it, before, after */
 
 var expect = require("chai").expect,
     datastack = require("../"),
@@ -32,65 +32,73 @@ var Collection = function(name) {
 };
 
 
-describe("router", function() {
+describe("Router", function() {
   
-  it("should create with resource name and used as middleware alone", function(done) {
+  describe("Construction", function() {
+    it("should create with resource name and used as middleware alone", function(done) {
     
-    var resource = new datastack.resource("book");
-    var app = require("koa")();
-    app.use(function*() {
-      this.body = this.req.url;
+      var resource = new datastack.resource("book");
+      var app = require("koa")();
+      app.use(function*() {
+        this.body = this.req.url;
+      });
+      //the datastack middleware
+      app.use(resource.middleware());
+      var srv = app.listen(PORT, function() {
+        request.get("http://localhost:8888/books", function(res) {
+          expect(res.status).to.equal(200);
+          expect(res.text).to.equal("/books");
+          srv.close(done);
+        });
+      });
+    
     });
-    //the datastack middleware
-    app.use(resource.middleware());
-    var srv = app.listen(PORT);
-    
-    request.get("http://localhost:8888/books", function(res) {
-      expect(res.status).to.equal(200);
-      expect(res.text).to.equal("/books");
-      srv.close(done);
-    });
-    
-    
   });
+  
+  
+  var resource = new datastack.resource("book");
+  var app = require("koa")(),
+      collection, srv;
+  //intercept incoming requests
+  app.use(function*(next) {
+    //mimick `storage`
+    this.storage = {};
+    this.storage.buildSort = function() {
+      return [["ctime", -1]];
+    };
+    
+    //mimick `collection`
+    this.collection = function*(name) {
+      collection = new Collection(name);
+      return collection;
+    };
+    yield next;
+  });
+  app.on("error", function(e) {
+    console.error(e.stack);
+  });
+  //the datastack middleware
+  app.use(resource.middleware());
   
   describe("Route GET /:collections", function() {
     
-    var resource = new datastack.resource("book");
-    var app = require("koa")(),
-        collection, srv;
-    //intercept incoming requests
-    app.use(function*(next) {
-      //mimick `storage`
-      this.storage = {};
-      this.storage.buildSort = function() {
-        return [["ctime", -1]];
-      };
-      
-      //mimick `collection`
-      this.collection = function*(name) {
-        collection = new Collection(name);
-        return collection;
-      };
-      yield next;
-    });
-    app.on("error", function(e) {
-      console.error(e.stack);
-    });
-    //the datastack middleware
-    app.use(resource.middleware());
-    
     before(function(done) {
-      var start = app.listen.bind(app, PORT, done);
-      if(app.listening) {
-        srv.close(start);
-      } else {
-        srv = start(function() {
-          app.listening = true;
-          done();
-        });
-      }
+      // var start = app.listen.bind(app, PORT, done);
+      // if(app.listening) {
+      //   srv.close(start);
+      // } else {
+      //   srv = start(function() {
+      //     app.listening = true;
+      //     done();
+      //   });
+      // }
+      srv = app.listen(PORT, done);
     });
+  
+    after(function(done) {
+      srv.close(done);
+    });
+    
     
     
     it("should have default pagination, query, sort", function(done) {
@@ -111,7 +119,6 @@ describe("router", function() {
       });
       
     });
-    
     
   });
   

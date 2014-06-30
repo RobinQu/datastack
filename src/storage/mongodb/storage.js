@@ -2,11 +2,12 @@ var mongo = require("co-mongo"),
     co = require("co"),
     Collection = require("./collection"),
     _ = require("lodash"),
+    debug = require("debug")("datastack:mongo"),
     defaults = require("./defaults");
 
 var MongoStorage = function(options) {
   this.uri = options.uri;
-  defaults.setOptions(["idKey", "objectAsKey", "writeConcern", "timestamp"], options, this);
+  defaults.setOptions(["idKey", "objectIdAsKey", "writeConcern", "timestamp"], options, this);
 };
 
 var UpdateOperators = ["$set", "$inc", "$mul", "$rename", "$setOnInsert", "$unset", "$min", "$max", "$currentDate"];
@@ -19,32 +20,44 @@ MongoStorage.prototype.disconnect = co(function*() {
   yield this.db.close();
 });
 
-MongoStorage.prototype.middleware = function () {
+MongoStorage.prototype.middleware = function() {
   var self = this;
-  return function*(next) {
+  return function* datastackStorage(next) {
     // `this` refers to the koa context
     if(this.query.sort) {
-      this.sort = self.storage.buildSort(this.query.sort);
+      this.sort = self.buildSort(this.query.sort);
     }
-    if(this.query.conditions) {
-      this.condtions = self.storage.buildQuery(this);
+    if(this.query.criteria) {
+      this.condtions = self.buildQuery(this.query.criteria);
     }
-    this.collection = self.storage.collection.bind(self.storage);
+    this.collection = self.collection.bind(self);
     yield next;
   };
 };
 
 MongoStorage.prototype.collection = function(name) {
   var self = this;
-  return co(function*() {
-    var col = yield this.db.collection(name);
+  return function*() {
+    var col = yield self.db.collection(name);
+    //ensure index
+    var indexes = yield col.indexInformation();
+    if(!indexes[self.idKey + "_1"]) {
+      debug("ensure index");
+      indexes = {};
+      indexes[self.idKey] = 1;
+      yield col.ensureIndex(indexes, {
+        unique: true,
+        sparse: true
+      });
+    }
+    
     //we use a wrapper to adapat
-    yield new Collection(col, {
+    return new Collection(col, {
       idKey: self.idKey,
       objectIdAsId: self.objectIdAsId,
       writeConcern: self.writeConcern
     });
-  });
+  };
 };
 
 MongoStorage.prototype.buildSort = function (sort) {

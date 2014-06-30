@@ -4,10 +4,10 @@ var util = require("util"),
 var defaults = {
   
   //primary key name
-  idKey: "_id",
+  idKey: "storeKey",
   
   //if we should use ObjectId to construct primary key
-  objectIdAsKey: true,
+  objectIdAsKey: false,
   
   //use default write concern
   writeConcern: null,

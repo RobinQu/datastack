@@ -1,6 +1,8 @@
 var Router = require("koa-router"),
     middlewares = require("./middlewares"),
-    lingo = require("lingo");
+    lingo = require("lingo"),
+    util = require("util"),
+    uuid = require("node-uuid");
 
 module.exports = function createResource(name, options) {
   
@@ -39,8 +41,14 @@ module.exports = function createResource(name, options) {
   
   router.post(pattern1, function*() {
     debug("create");
-    var collection = yield this.collection(this.params[0]);
-    yield collection.insert(this.req.body);
+    var data, collection;
+    collection = yield this.collection(this.params[0]);
+    data = this.request.body;
+    if(!data[this.storage.idKey]) {
+      data[this.storage.idKey] = uuid.v4();
+    }
+    yield collection.insert(data);
+    this.set("Location", util.format("/%s/%s", pluralizedName, data[this.storage.idKey]));
     this.status = 201;
   });
   
@@ -52,10 +60,23 @@ module.exports = function createResource(name, options) {
   });
   
   router.put(pattern2, function*() {
-    debug("update");
-    var collection = yield this.collection(this.params[0]);
-    yield collection.updateById(this.params[1], this.req.body);
-    this.status = 200;
+    var collection, id, record, data;
+    id = this.params[1];
+    collection = yield this.collection(this.params[0]);
+    record = yield collection.findById(id);
+    data = this.request.body;
+    if(record) {
+      debug("update");
+      yield collection.updateById(id, data);
+      this.status = 200;
+    } else {
+      debug("create");
+      data[this.storage.idKey] = id;
+      yield collection.insert(data);
+      this.status = 201;
+    }
+    this.set("Location", util.format("/%s/%s", pluralizedName, id));
+    
   });
   
   

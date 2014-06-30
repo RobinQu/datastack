@@ -1,5 +1,6 @@
 var mongo = require("co-mongo"),
     _ = require("lodash"),
+    debug = require("debug")("mongo:collection"),
     co = require("co");
 
 var CollectionAdapter = function(col, options) {
@@ -11,11 +12,11 @@ CollectionAdapter.prototype.find = function(query, projections) {
   return this._col.find(query, projections);
 };
 
-CollectionAdapter.prototype.findById = function (id) {
-  var query = this._buildIdQuery(id), self = this;
-  return co(function*() {
-    yield self._col.findOne(query);
-  });
+CollectionAdapter.prototype.findById = function(id) {
+  var query = this._buildIdQuery(id),
+      self = this;
+  debug("find by id %o", query);
+  return self._col.findOne(query);
 };
 
 CollectionAdapter.prototype._buildIdQuery = function (id) {
@@ -24,6 +25,8 @@ CollectionAdapter.prototype._buildIdQuery = function (id) {
   return query;
 };
 
+
+//TODO: conditional PUT, which supports `If-Match` and `If-None-Match`
 CollectionAdapter.prototype.updateById = function (id, updates) {
   var self = this, query = this._buildIdQuery(id);
   return co(function*() {
@@ -43,6 +46,10 @@ CollectionAdapter.prototype.removeById = function (id) {
       writeConcern: self.writeConcern
     });
   });
+};
+
+CollectionAdapter.prototype.insert = function (record) {
+  return this._col.insert(record);
 };
 
 module.exports = CollectionAdapter;
