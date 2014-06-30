@@ -44,6 +44,41 @@ describe("Memory store", function() {
     });
   });
   
-  it("should find by query", function() {});
+  it("should find by query and projection", function(done) {
+    srv = app.listen(PORT);
+    request.post("http://localhost:8888/books")
+    .send([{a:1, b:2}, {a:2, c:3}, {a:2, b:2}]).end(function(res) {
+      expect(res.status).to.equal(201);
+      expect(store.books.data.length).to.equal(3);
+      request.get("http://localhost:8888/books").query({
+        criteria: encodeURIComponent(JSON.stringify({a:1})),
+        projection: ["a"]
+      }).end(function(res) {
+        expect(res.status).to.equal(200);
+        expect(res.body.length).to.equal(1);
+        expect(res.body[0].a).to.equal(1);
+        //`b` should be undefiend
+        expect(res.body[0].b).not.to.be.ok;
+        srv.close(done);
+      });
+    });
+  });
+
+  it("should work with pagination", function(done) {
+    srv = app.listen(PORT);
+    request.post("http://localhost:8888/books")
+    .send([{a:1, b:2}, {a:2, c:3}, {a:2, b:2}]).end(function(res) {
+      expect(res.status).to.equal(201);
+      request.get("http://localhost:8888/books").query({
+        skip: 5,
+        limit: 1
+      }).end(function(res) {
+        expect(res.status).to.equal(200);
+        expect(res.body[0].a).to.equal(2);
+        expect(res.body[0].b).to.equal(2);
+        srv.close(done);
+      });
+    });
+  });
   
 });

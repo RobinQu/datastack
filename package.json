@@ -34,7 +34,9 @@
     "lodash": "^2.4.1",
     "debug": "^1.0.2",
     "node-uuid": "^1.4.1",
-    "koa-bodyparser": "^1.0.1"
+    "koa-bodyparser": "^1.0.1",
+    "qs": "^0.6.6",
+    "koa-qs": "^1.0.0"
   },
   "devDependencies": {
     "superagent": "^0.18.0",

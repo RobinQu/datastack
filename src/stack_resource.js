@@ -24,7 +24,7 @@ module.exports = function createResource(name, options) {
   
   router.get(pattern1, middlewares.pagination(options.pagination), middlewares.query(), function*() {
     debug("index");
-    
+
     var collection = yield this.collection(this.params[0]);
     this.body =  yield collection.find(this.criteria, this.projection)
               .skip(this.pagination.skip)
@@ -51,10 +51,8 @@ module.exports = function createResource(name, options) {
     collection = yield this.collection(this.params[0]);
     data = this.request.body;
     if(util.isArray(data)) {//batch create
-      data.forEach(function(d) {
-        if(!d[idKey]) {
-          d[idKey] = uuid.v4();
-        }
+      data.forEach(function(d) {//overwrite primary key
+        d[idKey] = uuid.v4();
       });
     } else {//create a single record
       if(!data[this.storage.idKey]) {

@@ -1,4 +1,5 @@
 var debug = require("debug")("storage:memory"),
+    util = require("util"),
     Collection = require("./collection");
 
 var Storage = function(options) {
@@ -58,7 +59,8 @@ Storage.prototype.buildUpdate = function(update) {
 // This is vendor specific
 // * `query`: the query object from request query (`this.query.criteria`)
 Storage.prototype.buildQuery = function(query) {
-  return query;
+  debug("build criteria %o", query);
+  return query ? JSON.parse(decodeURIComponent(query)) : {};
 };
 
 
@@ -68,11 +70,19 @@ Storage.prototype.buildQuery = function(query) {
 // returns the sort descriptor that's acceptable by database vendors
 // we are building `lodash` sort descrptor here
 Storage.prototype.buildSort = function (sort) {
+  debug("build sort for %o", sort);
   if(typeof sort === "string") {
     return sort.split(",");
   }
   //assuming it's in array represention
-  return sort;
+  return sort || [];
+};
+
+Storage.prototype.buildProjection = function (projection) {
+  if(util.isArray(projection)) {
+    return projection;
+  }
+  return projection ? projection.split(",") : [];
 };
 
 

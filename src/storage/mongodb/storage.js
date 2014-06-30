@@ -65,9 +65,8 @@ MongoStorage.prototype.buildSort = function (sort) {
   }, []);
 };
 
-MongoStorage.prototype.buildQuery = function(query) {
-  //TODO: escapse, etc
-  return query;
+MongoStorage.prototype.buildQuery = MongoStorage.prototype.buildProjection = function(subject) {
+  return JSON.parse(decodeURIComponent(subject));
 };
 
 MongoStorage.prototype.buildUpdate = function (update) {
@@ -79,5 +78,6 @@ MongoStorage.prototype.buildUpdate = function (update) {
   }
   return update;
 };
+
 
 module.exports = MongoStorage;

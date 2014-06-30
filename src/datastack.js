@@ -33,25 +33,17 @@ Datastack.prototype.hook = function(app) {
   app.context.datastack = this;
   app.context.storage = this.storage;
   app.use(require("koa-bodyparser")());
+  require("koa-qs")(app);
   app.use(function* datastack(next) {
     //report version and vendor
     this.set("x-powered-by", "datastack");
     this.set("x-datastack-version", Datastack.version);
+    
+    this.collection = this.storage.collection.bind(this.storage);
+    
     yield next;
   });
   
-  app.use(function* storage(next) {
-    // `this` refers to the koa context
-    if(this.query.sort) {
-      this.sort = this.storage.buildSort(this.query.sort);
-    }
-    if(this.query.criteria) {
-      this.condtions = this.storage.buildQuery(this.query.criteria);
-    }
-    this.collection = this.storage.collection.bind(this.storage);
-    yield next;
-    
-  });
 };
 
 Datastack.prototype.teardown = function () {

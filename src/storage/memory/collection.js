@@ -1,5 +1,6 @@
 var _ = require("lodash"),
-    debug = require("debug")("storage:memory");
+    debug = require("debug")("storage:memory"),
+    util = require("util");
 
 // Collection class
 // In fact, `Collection` class is optional to impmement, if you feel comfortable to provide all methods for a `collection` in `Storage.prototype.collection`
@@ -24,21 +25,27 @@ Collection.prototype.find = function (condition, projection) {
   var cursor = {
     op: []
   };
+  debug("condition %o, projection %o", condition, projection);
   cursor.limit = function(limit) {
     this.op.push(function() {
-      return this.slice(0, limit);
+      debug("limit %s", limit);
+      return this.slice(0, Math.min(limit, this.length));
     });
     return this;
   };
   cursor.skip = function(skip) {
     this.op.push(function() {
-      return this.slice(skip, 0);
+      debug("skip %s", skip);
+      return skip ? this.slice(Math.min(skip, this.length)) : this;
     });
+    return this;
   };
   cursor.sort = function(sort) {
     this.op.push(function() {
-      return _.sort(this, sort);
+      debug("sort %o", sort);
+      return sort.length ? _.sortBy(this, sort) : this;
     });
+    return this;
   };
   cursor.toArray = function() {
     return function*() {
@@ -47,14 +54,19 @@ Collection.prototype.find = function (condition, projection) {
       }, self.data);
     };
   };
-  if(condition) {
+  if(Object.keys(condition).length) {
     cursor.op.push(function() {
-      return _.find(this, condition);
+      return _.where(this, condition) || [];
     });
   }
-  if(projection) {
+  if(projection.length) {
     cursor.op.push(function() {
-      return _.select(this, projection);
+      return _.map(this, function(d) {
+        return projection.reduce(function(prev, cur) {
+          prev[cur] = d[cur];
+          return prev;
+        }, {});
+      });
     });
   }
   
@@ -65,7 +77,11 @@ Collection.prototype.insert = function (record) {
   debug("insert %o", record);
   var self = this;
   return function*() {
-    self.data.push(record);
+    if(util.isArray(record)) {
+      self.data = self.data.concat(record);
+    } else {
+      self.data.push(record);
+    }
   };
 };
 
