@@ -5,6 +5,7 @@ var Router = require("koa-router"),
     uuid = require("node-uuid"),
     Constants = require("./constants");
 
+
 module.exports = function createResource(name, options) {
   
   options = options || {};
@@ -46,14 +47,23 @@ module.exports = function createResource(name, options) {
   
   router.post(pattern1, function*() {
     debug("create");
-    var data, collection;
+    var data, collection, idKey = this.storage.idKey;
     collection = yield this.collection(this.params[0]);
     data = this.request.body;
-    if(!data[this.storage.idKey]) {
-      data[this.storage.idKey] = uuid.v4();
+    if(util.isArray(data)) {//batch create
+      data.forEach(function(d) {
+        if(!d[idKey]) {
+          d[idKey] = uuid.v4();
+        }
+      });
+    } else {//create a single record
+      if(!data[this.storage.idKey]) {
+        data[this.storage.idKey] = uuid.v4();
+      }
+      this.set("Location", util.format("/%s/%s", pluralizedName, data[idKey]));
     }
     yield collection.insert(data);
-    this.set("Location", util.format("/%s/%s", pluralizedName, data[this.storage.idKey]));
+    
     this.status = 201;
   });
   

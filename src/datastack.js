@@ -29,7 +29,6 @@ var Datastack = function(app, options) {
 };
 
 Datastack.prototype.hook = function(app) {
-  var self = this;
   debug("hook");
   app.context.datastack = this;
   app.context.storage = this.storage;
@@ -41,7 +40,18 @@ Datastack.prototype.hook = function(app) {
     yield next;
   });
   
-  app.use(self.storage.middleware());
+  app.use(function* storage(next) {
+    // `this` refers to the koa context
+    if(this.query.sort) {
+      this.sort = this.storage.buildSort(this.query.sort);
+    }
+    if(this.query.criteria) {
+      this.condtions = this.storage.buildQuery(this.query.criteria);
+    }
+    this.collection = this.storage.collection.bind(this.storage);
+    yield next;
+    
+  });
 };
 
 Datastack.prototype.teardown = function () {

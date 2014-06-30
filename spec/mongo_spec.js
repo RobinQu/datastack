@@ -46,7 +46,9 @@ describe("Mongo storage", function() {
         debug("remove all docs of book collection");
         yield col._col.remove();
       })(function(e) {
-        console.log(e && e.stack);
+        if(e) {
+          console.log(e && e.stack);
+        }
         srv = app.listen(PORT, done);
       });
     }, 100);
