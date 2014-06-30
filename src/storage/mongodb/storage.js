@@ -65,7 +65,8 @@ MongoStorage.prototype.buildSort = function (sort) {
   }, []);
 };
 
-MongoStorage.prototype.buildQuery = MongoStorage.prototype.buildProjection = function(subject) {
+MongoStorage.prototype.buildQuery = 
+MongoStorage.prototype.buildProjection = function(subject) {
   return JSON.parse(decodeURIComponent(subject));
 };
 

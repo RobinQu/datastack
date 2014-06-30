@@ -66,6 +66,9 @@ describe("Router", function() {
     this.storage.buildSort = function() {
       return [["ctime", -1]];
     };
+    this.storage.buildProjection = this.storage.buildQuery = function(p) {
+      return p || {};
+    };
     
     //mimick `collection`
     this.collection = function*(name) {
