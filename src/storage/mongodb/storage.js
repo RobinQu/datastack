@@ -55,7 +55,8 @@ MongoStorage.prototype.collection = function(name) {
     return new Collection(col, {
       idKey: self.idKey,
       objectIdAsId: self.objectIdAsId,
-      writeConcern: self.writeConcern
+      writeConcern: self.writeConcern,
+      timestamp: self.timestamp
     });
   };
 };
@@ -79,14 +80,19 @@ MongoStorage.prototype.buildSort = function (sort) {
   }, []);
 };
 
-MongoStorage.prototype.buildQuery = function (query) {
-  var hasOperator = _.intersection(Object.keys(query), UpdateOperators).length;
-  if(!hasOperator) {//we wrap the query hash with `$set`
+MongoStorage.prototype.buildQuery = function(query) {
+  //TODO: escapse, etc
+  return query;
+};
+
+MongoStorage.prototype.buildUpdate = function (update) {
+  var hasOperator = _.intersection(Object.keys(update), UpdateOperators).length;
+  if(!hasOperator) {//we wrap the update hash with `$set`
     return {
-      "$set": query
+      "$set": update
     };
   }
-  return query;
+  return update;
 };
 
 module.exports = MongoStorage;

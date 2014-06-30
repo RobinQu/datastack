@@ -29,11 +29,20 @@ CollectionAdapter.prototype._buildIdQuery = function (id) {
 //TODO: conditional PUT, which supports `If-Match` and `If-None-Match`
 CollectionAdapter.prototype.updateById = function (id, updates) {
   var self = this, query = this._buildIdQuery(id);
+  
+  if(this.timestamp) {
+    //forbid changes on `ctime`
+    delete updates.ctime;
+    updates.mtime = new Date();
+  }
+  
   return co(function*() {
+    updates = this.storage.buildUpdate(updates);
+    debug("update by id %s, %o", id, updates);
     yield self._col.update(query, updates, {
       upsert: false,
       multi: false,
-      writeConcern: self.writeConcerns
+      writeConcern: self.writeConcern
     });
   });
 };
@@ -41,6 +50,7 @@ CollectionAdapter.prototype.updateById = function (id, updates) {
 CollectionAdapter.prototype.removeById = function (id) {
   var self = this, query = this._buildIdQuery(id);
   return co(function*() {
+    debug("remove by id %s", id);
     yield self._col.remove(query, {
       justOne: true,
       writeConcern: self.writeConcern
@@ -49,6 +59,15 @@ CollectionAdapter.prototype.removeById = function (id) {
 };
 
 CollectionAdapter.prototype.insert = function (record) {
+  debug("insert");
+  if(this.timestamp) {
+    if(!record.ctime) {
+      record.ctime = new Date();
+    }
+    if(!record.mtime) {
+      record.mtime = record.ctime;
+    }
+  }
   return this._col.insert(record);
 };
 

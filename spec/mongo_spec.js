@@ -8,7 +8,7 @@ var datastack = require(".."),
     expect = require("chai").expect;
 
 
-describe("Mongo solution", function() {
+describe("Mongo storage", function() {
   
   
   var app = koa(),
@@ -34,6 +34,9 @@ describe("Mongo solution", function() {
   //     });
   //   }
   // });
+  app.on("error", function(e) {
+    console.log(e && e.stack);
+  });
     
   before(function(done) {
     debug("before");
@@ -55,7 +58,7 @@ describe("Mongo solution", function() {
   });
   
   
-  describe("Record creation", function() {
+  describe("create", function() {
     
     it("should create a record", function(done) {
       request.put("http://localhost:8888/books/bigtitle1").send({
@@ -71,6 +74,7 @@ describe("Mongo solution", function() {
       request.get("http://localhost:8888/books/bigtitle1", function(res) {
         expect(res.status).to.equal(200);
         expect(res.body.author).to.equal("RobinQu");
+        expect(res.body.ctime).to.ok;
         done();
       });
     });
@@ -91,6 +95,62 @@ describe("Mongo solution", function() {
     });
     
   });
+  
+  describe("update", function() {
+    
+    it("should update the created record", function(done) {
+      request.put("http://localhost:8888/books/bigtitle2")
+      .send({
+        title: "hello world",
+        author: "unknown"
+      }).end(function(res) {
+        expect(res.status).to.equal(201);
+        var location = res.header.location;
+        request.put("http://localhost:8888" + location)
+        .send({author: "james", date: new Date()})
+        .end(function(res) {
+          expect(res.status).to.equal(200);
+          request.get("http://localhost:8888" + location, function(res) {
+            var book = res.body;
+            expect(res.status).to.equal(200);
+            expect(book.author).to.equal("james");
+            expect(book.date).to.be.ok;
+            done();
+          });
+        });
+      });
+    });
+    
+  });
+  
+  describe("delete", function() {
+    
+    it("should delete an existing record", function(done) {
+      request.post("http://localhost:8888/books")
+      .send({
+        title: "Big world",
+        author: "unknown"
+      })
+      .end(function(res) {
+        expect(res.status).to.equal(201);
+        var location = res.headers.location;
+        request.get("http://localhost:8888" + location, function(res) {
+          expect(res.status).to.equal(200);
+          expect(res.body.author).to.equal("unknown");
+          request.del("http://localhost:8888" + location, function(res) {
+            expect(res.status).to.equal(204);
+            request.get("http://localhost:8888" + location, function(res) {
+              expect(res.status).to.equal(404);
+              done();
+            });
+          });
+        });
+      });
+    });
+    
+  });
+  
+  
   
   
 });

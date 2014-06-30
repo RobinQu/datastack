@@ -2,7 +2,8 @@ var Router = require("koa-router"),
     middlewares = require("./middlewares"),
     lingo = require("lingo"),
     util = require("util"),
-    uuid = require("node-uuid");
+    uuid = require("node-uuid"),
+    Constants = require("./constants");
 
 module.exports = function createResource(name, options) {
   
@@ -36,7 +37,11 @@ module.exports = function createResource(name, options) {
     
     var collection = yield this.collection(this.params[0]);
     var doc = yield collection.findById(this.params[1]);
-    this.body = doc;
+    if(!doc) {
+      this.status = 404;
+    } else {
+      this.body = doc;
+    }
   });
   
   router.post(pattern1, function*() {
@@ -55,7 +60,7 @@ module.exports = function createResource(name, options) {
   router.del(pattern2, function*() {
     debug("delete");
     var collection = yield this.collection(this.params[0]);
-    yield collection.removeById(this.parmas[1]);
+    yield collection.removeById(this.params[1]);
     this.status = 204;
   });
   
@@ -63,8 +68,17 @@ module.exports = function createResource(name, options) {
     var collection, id, record, data;
     id = this.params[1];
     collection = yield this.collection(this.params[0]);
-    record = yield collection.findById(id);
     data = this.request.body;
+    if(!data) {
+      this.status = 400;
+      this.body = {
+        message: "should have usable data",
+        status: "error",
+        code: Constants.errors.BAD_REQUEST
+      };
+      return;
+    }
+    record = yield collection.findById(id);
     if(record) {
       debug("update");
       yield collection.updateById(id, data);
