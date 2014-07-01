@@ -82,4 +82,39 @@ describe("Memory store", function() {
     });
   });
   
+  it("should support multiple version", function(done) {
+    srv = app.listen(PORT);
+    var uri = "http://localhost:8888/books/bigtitle3";
+    request.put(uri).send({title: "bigtitle", price: 10}).end(function(res) {
+      expect(res.headers["x-datastack-ref"]).to.equal("1");
+      request.put(uri).send({price:11}).set("if-match", res.headers.etag).end(function(res) {
+        expect(res.headers["x-datastack-ref"]).to.equal("2");
+        request.put(uri).send({price:12}).set("if-match", res.headers.etag).end(function(res) {
+          expect(res.headers["x-datastack-ref"]).to.equal("3");
+          
+          request.get(uri + "/_refs", function(res) {//list all refs
+            expect(res.body).to.deep.equal([3,2,1]);
+            
+            request.get(uri + "/_refs/1", function(res) {//get a single version
+              expect(res.body.price).to.equal(10);
+              
+              request.del(uri + "/_refs/1", function(res) {
+                expect(res.status).to.equal(204);
+                request.get(uri + "/_refs/1", function(res) {
+                  expect(res.status).to.equal(404);
+                  srv.close(done);
+                });
+                
+              });
+              
+            });
+            
+            
+          });
+        });
+      });
+    });
+    
+  });
+  
 });

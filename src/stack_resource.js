@@ -155,7 +155,8 @@ module.exports = function createResource(name, options) {
   router.get("/" + pluralizedName + "/:id/_refs/:ref", function*() {
     debug("get %s, %s", this.params.id, this.params.ref);
     var collection = yield this.collection(pluralizedName);
-    var one = yield collection.findOne(this.params.id, this.params.ref, false);
+    var one = yield collection.findOne(this.params.id, this.params.ref);
+    
     if(one) {
       this.identify(one);
       this.body = one;

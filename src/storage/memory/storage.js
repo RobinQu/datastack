@@ -91,13 +91,14 @@ Storage.prototype.buildProjection = function (projection) {
 
 Storage.prototype.etag = function (record) {
   var hash = crypto.createHash("sha1");
-  hash.update(JSON.stringify(record));
+  hash.update(record.id);
+  hash.update(record._ref + "");
   return hash.digest("hex");
 };
 
 // TODO: multipe version support
-Storage.prototype.ref = function () {
-  return 1;
+Storage.prototype.ref = function (record) {
+  return record._ref;
 };
 
 

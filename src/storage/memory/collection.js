@@ -15,8 +15,9 @@ Collection.prototype.findOne = function (id, ref) {
   return function*() {
     var query = {id: id};
     if(ref) {
-      query.ref = ref;
+      query._ref = parseInt(ref, 10);
     }
+    debug("find one by %o", query);
     return _.find(self.data, query);
   };
 };
@@ -58,6 +59,13 @@ Collection.prototype.find = function (condition, projection) {
       }, self.data);
     };
   };
+  
+  cursor.op.push(function() {
+    debug("filter archive");
+    return _.where(this, {_archived: false});
+  });
+  
+  
   if(Object.keys(condition).length) {
     cursor.op.push(function() {
       return _.where(this, condition) || [];
@@ -74,10 +82,7 @@ Collection.prototype.find = function (condition, projection) {
     });
   }
   
-  // cursor.op.push(function() {
-  //   return _.where(this, {archived: false});
-  // });
-  //
+
   return function*() {
     return cursor;
   };
@@ -88,9 +93,19 @@ Collection.prototype.insert = function (record) {
   var self = this;
   return function*() {
     if(util.isArray(record)) {
+      var start = self.data.length,
+          end;
+      record.forEach(function(r) {
+        r._archived = false;
+        r._ref = 1;
+      });
       self.data = self.data.concat(record);
-      return record;
+      end = self.data.length;
+      // console.log(self.data);
+      return self.data.slice(start, end);
     } else {
+      record._archived = false;
+      record._ref = 1;
       self.data.push(record);
       return [record];
     }
@@ -111,8 +126,23 @@ Collection.prototype.updateById = function (id, updates) {
     debug("update by id %s, %o", id, updates);
     var idx = _.findIndex(self.data, {id:id});
     if(idx > -1) {
+      // archive old one
+      self.data.push(_.extend({}, self.data[idx], {_archived: true}));
+      //apply changes
       self.data[idx] = _.extend(self.data[idx], updates);
+      //increment `_ref`
+      self.data[idx]._ref ++;
     }
+  };
+};
+
+Collection.prototype.versions = function(id) {
+  var self = this;
+  
+  return function*() {
+    debug("versions %s", id);
+    var versions = _.where(self.data, {id: id});
+    return _.map(versions, "_ref").sort().reverse();
   };
 };
 
