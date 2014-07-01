@@ -44,6 +44,7 @@ module.exports = function createResource(name, options) {
     if(!doc) {
       this.status = 404;
     } else {
+      this.identify(doc);
       this.body = doc;
     }
   });

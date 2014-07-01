@@ -108,8 +108,6 @@ describe("Memory store", function() {
               });
               
             });
-            
-            
           });
         });
       });

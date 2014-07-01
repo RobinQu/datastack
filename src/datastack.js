@@ -65,4 +65,6 @@ require("pkginfo")(module, "version");
 
 datastack.resource = require("./stack_resource");
 
+datastack.subscription = require("./subscription");
+
 datastack.app = require("./stack_app");
