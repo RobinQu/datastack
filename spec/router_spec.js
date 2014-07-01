@@ -16,13 +16,17 @@ var Collection = function(name) {
   this.name = name;
   this.data = [];
   this.cursor = {};
-  this.find = this.cursor.sort = this.cursor.limit  = this.cursor.skip = function() {
+  this.find = function*() {
+    self.data.push(Array.prototype.slice.call(arguments, 0));
+    return self.cursor;
+  };
+  this.cursor.sort = this.cursor.limit  = this.cursor.skip = function() {
     // console.log("return cursor");
     self.data.push(Array.prototype.slice.call(arguments, 0));
     return self.cursor;
   };
   
-  this.findById = this.removeById = this.updateById = this.cursor.toArray = function() {
+  this.findOne = this.removeById = this.updateById = this.cursor.toArray = function() {
     // console.log("return generator func");
     self.data.push(Array.prototype.slice.call(arguments, 0));
     return function*() {
@@ -112,12 +116,13 @@ describe("Router", function() {
         expect(args).to.be.ok;
         //criteria, projection
         expect(args[0]).to.deep.equal([{}, {}]);
-        //skip
-        expect(args[1][0]).to.equal(0);
-        //limit
-        expect(args[2][0]).to.equal(20);
         //sort
-        expect(args[3][0][0]).to.deep.equal(["ctime", -1]);
+        expect(args[1][0][0]).to.deep.equal(["ctime", -1]);
+        //skip
+        expect(args[2][0]).to.equal(0);
+        //limit
+        expect(args[3][0]).to.equal(20);
+        
         done();
       });
       

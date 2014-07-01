@@ -32,6 +32,13 @@ Datastack.prototype.hook = function(app) {
   debug("hook");
   app.context.datastack = this;
   app.context.storage = this.storage;
+  
+  //write `ETag` and `x-datastack-ref` to response
+  app.context.identify = function(record) {
+    this.set("ETag", this.storage.etag(record));
+    this.set("x-datastack-ref", this.storage.ref(record));
+  };
+  
   app.use(require("koa-bodyparser")());
   require("koa-qs")(app);
   app.use(function* datastack(next) {
@@ -40,7 +47,6 @@ Datastack.prototype.hook = function(app) {
     this.set("x-datastack-version", Datastack.version);
     
     this.collection = this.storage.collection.bind(this.storage);
-    
     yield next;
   });
   

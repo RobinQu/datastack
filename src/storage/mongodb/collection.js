@@ -1,74 +1,71 @@
-var mongo = require("co-mongo"),
-    _ = require("lodash"),
-    debug = require("debug")("mongo:collection"),
+var debug = require("debug")("mongo:collection"),
     co = require("co");
 
-var CollectionAdapter = function(col, options) {
+var CollectionAdapter = function(col) {
   this._col = col;
-  _.extend(this, options);
 };
 
 CollectionAdapter.prototype.find = function(query, projections) {
-  return this._col.find(query, projections);
+  var self = this;
+  return function*() {
+    query[this.storage.archiveKey] = false;
+    return self._col.find(query, projections);
+  };
 };
 
-CollectionAdapter.prototype.findById = function(id) {
-  var query = this._buildIdQuery(id),
-      self = this;
-  debug("find by id %o", query);
-  return self._col.findOne(query);
-};
-
-CollectionAdapter.prototype._buildIdQuery = function (id) {
-  var query = {};
-  query[this.idKey] = this.objectIdAsKey ? new mongo.ObjectId(id) : id;
-  return query;
+CollectionAdapter.prototype.findOne = function(id, ref) {
+  var self = this;
+  return function*() {
+    var query = this.storage.buildSimpleQuery(id, ref);
+    debug("find one by %o", query);
+    return yield self._col.findOne(query);
+  };
 };
 
 
-//TODO: conditional PUT, which supports `If-Match` and `If-None-Match`
-CollectionAdapter.prototype.updateById = function (id, updates) {
-  var self = this, query = this._buildIdQuery(id);
-  
-  if(this.timestamp) {
-    //forbid changes on `ctime`
-    delete updates.ctime;
-    updates.mtime = new Date();
-  }
+CollectionAdapter.prototype.updateById = function (id, update) {
+  var self = this;
   
   return co(function*() {
-    updates = this.storage.buildUpdate(updates);
-    debug("update by id %s, %o", id, updates);
-    yield self._col.update(query, updates, {
-      upsert: false,
-      multi: false,
-      writeConcern: self.writeConcern
+    var query = this.storage.buildSimpleQuery(id);
+    update = this.storage.handleUpdateValue(update);
+    debug("update by id %s, %o", id, update);
+    
+    //update the record
+    var original = yield self._col.findAndModify(query, [[this.storage.timeKey.ctime, -1]], update, {
+      upsert: false
     });
+    if(original.length) {
+      original = original[0];
+      delete original._id;
+      //archived the original
+      original[this.storage.archiveKey] = true;
+      // console.log(original);
+      yield self._col.insert(original);
+    }
   });
 };
 
 CollectionAdapter.prototype.removeById = function (id) {
-  var self = this, query = this._buildIdQuery(id);
-  return co(function*() {
+  var self = this;
+  
+  return function*() {
+    var query = this.storage.buildSimpleQuery(id);
     debug("remove by id %s", id);
+    //delete all archived as well
+    delete query[this.storage.archiveKey];
     yield self._col.remove(query, {
-      justOne: true,
-      writeConcern: self.writeConcern
+      single: false
     });
-  });
+  };
 };
 
-CollectionAdapter.prototype.insert = function (record) {
-  debug("insert");
-  if(this.timestamp) {
-    if(!record.ctime) {
-      record.ctime = new Date();
-    }
-    if(!record.mtime) {
-      record.mtime = record.ctime;
-    }
-  }
-  return this._col.insert(record);
+CollectionAdapter.prototype.insert = function (data) {
+  var self = this;
+  return function*() {
+    debug("insert");
+    return yield self._col.insert(this.storage.handleRecordValue(data));
+  };
 };
 
 module.exports = CollectionAdapter;

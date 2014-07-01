@@ -4,7 +4,7 @@ var util = require("util"),
 var defaults = {
   
   //primary key name
-  idKey: "storeKey",
+  idKey: "_storeKey",
   
   //if we should use ObjectId to construct primary key
   objectIdAsKey: false,
@@ -13,7 +13,22 @@ var defaults = {
   writeConcern: null,
   
   //use timestamp or not
-  timestamp: true
+  timestamp: true,
+  
+  //ref key
+  refKey: "_ref",
+  
+  //archived key
+  archiveKey: "_archived",
+  
+  
+  //timestmap keys
+  timeKey: {
+    ctime: "_ctime",
+    mtime: "_mtime"
+  }
+  
+  
 };
 
 module.exports = {

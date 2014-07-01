@@ -2,7 +2,7 @@ var Router = require("koa-router"),
     middlewares = require("./middlewares"),
     lingo = require("lingo"),
     util = require("util"),
-    uuid = require("node-uuid"),
+    
     Constants = require("./constants");
 
 
@@ -26,10 +26,12 @@ module.exports = function createResource(name, options) {
     debug("index");
 
     var collection = yield this.collection(this.params[0]);
-    this.body =  yield collection.find(this.criteria, this.projection)
+    // console.log(this.pagination);
+    debug("criteria %o, projection %o, sort %o, pagination %o", this.criteria, this.projection, this.sort, this.pagination);
+    var cursor = yield collection.find(this.criteria, this.projection);
+    this.body = yield cursor.sort(this.sort)
               .skip(this.pagination.skip)
               .limit(this.pagination.limit)
-              .sort(this.sort)
               .toArray();
   });
   
@@ -37,7 +39,7 @@ module.exports = function createResource(name, options) {
     debug("show");
     
     var collection = yield this.collection(this.params[0]);
-    var doc = yield collection.findById(this.params[1]);
+    var doc = yield collection.findOne(this.params[1]);
     if(!doc) {
       this.status = 404;
     } else {
@@ -47,20 +49,30 @@ module.exports = function createResource(name, options) {
   
   router.post(pattern1, function*() {
     debug("create");
-    var data, collection, idKey = this.storage.idKey;
+    var data, collection;
+
     collection = yield this.collection(this.params[0]);
     data = this.request.body;
-    if(util.isArray(data)) {//batch create
-      data.forEach(function(d) {//overwrite primary key
-        d[idKey] = uuid.v4();
-      });
-    } else {//create a single record
-      if(!data[this.storage.idKey]) {
-        data[this.storage.idKey] = uuid.v4();
-      }
-      this.set("Location", util.format("/%s/%s", pluralizedName, data[idKey]));
+    
+    if(!data) {
+      this.status = 400;
+      this.body = {
+        message: "should have usable data",
+        status: "error",
+        code: Constants.errors.BAD_REQUEST
+      };
+      return;
     }
-    yield collection.insert(data);
+    
+    var result = yield collection.insert(data);
+    
+    //write resource location for single record creation
+    if(!util.isArray(data) && result.length && result[0][this.storage.idKey]) {
+      this.set("Location", util.format("/%s/%s", pluralizedName, result[0][this.storage.idKey]));
+    } else {//mark as batch save
+      debug("batch save %s", result.length);
+      this.set("x-batch-save", result.length);
+    }
     
     this.status = 201;
   });
@@ -73,7 +85,7 @@ module.exports = function createResource(name, options) {
   });
   
   router.put(pattern2, function*() {
-    var collection, id, record, data;
+    var collection, id, record, data, result;
     id = this.params[1];
     collection = yield this.collection(this.params[0]);
     data = this.request.body;
@@ -86,19 +98,26 @@ module.exports = function createResource(name, options) {
       };
       return;
     }
-    record = yield collection.findById(id);
-    if(record) {
+    record = yield collection.findOne(id);
+    // console.log(record, this.get("if-match"));
+    if(record && this.storage.etag(record) === this.get("if-match")) {//update
       debug("update");
       yield collection.updateById(id, data);
       this.status = 200;
-    } else {
+      // this.set("Location", util.format("/%s/%s", pluralizedName, id));
+      return;
+    }
+    if(!record || this.get("if-none-match")) {//create
       debug("create");
       data[this.storage.idKey] = id;
-      yield collection.insert(data);
+      result = yield collection.insert(data);
       this.status = 201;
+      this.identify(result[0]);
+      this.set("Location", util.format("/%s/%s", pluralizedName, id));
+      return;
     }
-    this.set("Location", util.format("/%s/%s", pluralizedName, id));
     
+    this.status = 409;
   });
   
   

@@ -66,18 +66,14 @@ describe("Mongo storage", function() {
       request.put("http://localhost:8888/books/bigtitle1").send({
         title: "JavaScript 101",
         author: "RobinQu"
-      }).end(function(res) {
+      }).set("if-none-match", "*").end(function(res) {
         expect(res.status).to.equal(201);
-        done();
-      });
-    });
-    
-    it("should get the record", function(done) {
-      request.get("http://localhost:8888/books/bigtitle1", function(res) {
-        expect(res.status).to.equal(200);
-        expect(res.body.author).to.equal("RobinQu");
-        expect(res.body.ctime).to.ok;
-        done();
+        request.get("http://localhost:8888/books/bigtitle1", function(res) {
+          expect(res.status).to.equal(200);
+          expect(res.body.author).to.equal("RobinQu");
+          expect(res.body.ctime).to.ok;
+          done();
+        });
       });
     });
     
@@ -116,11 +112,14 @@ describe("Mongo storage", function() {
           criteria: encodeURIComponent(JSON.stringify({a:1})),
           projection: encodeURIComponent(JSON.stringify({a:1}))
         }).end(function(res) {
+          console.log(res.body);
           expect(res.status).to.equal(200);
           expect(res.body.length).to.equal(1);
           expect(res.body[0].a).to.equal(1);
           //`b` should be undefiend
           expect(res.body[0].b).not.to.be.ok;
+          // other meta key should be avaiable even if projection is requested
+          expect(res.body[0]._ref).to.be.ok;
           done();
         });
       });
@@ -136,7 +135,8 @@ describe("Mongo storage", function() {
           limit: 1
         }).end(function(res) {
           expect(res.status).to.equal(200);
-          expect(res.body[0].a).to.equal(2);
+          //get {a:1,b:2}, as DESC ctime is default sorter
+          expect(res.body[0].a).to.equal(1);
           expect(res.body[0].b).to.equal(2);
           done();
         });
@@ -156,13 +156,16 @@ describe("Mongo storage", function() {
         author: "unknown"
       }).end(function(res) {
         expect(res.status).to.equal(201);
+        var ref = res.headers.etag;
         var location = res.header.location;
         request.put("http://localhost:8888" + location)
+        .set("if-match", ref)
         .send({author: "james", date: new Date()})
         .end(function(res) {
           expect(res.status).to.equal(200);
           request.get("http://localhost:8888" + location, function(res) {
             var book = res.body;
+            expect(book._ref).to.equal(2);
             expect(res.status).to.equal(200);
             expect(book.author).to.equal("james");
             expect(book.date).to.be.ok;
