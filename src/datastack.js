@@ -10,8 +10,11 @@ var Datastack = function(app, options) {
     return app.context.datastack;
   }
   
-  //TODO: use memory storage as fallback
-  options = options || {};
+  options = options || {
+    storage: {
+      type: "memory"
+    }
+  };
   
   try {
     //TODO: support more `Storage` instance

@@ -1,6 +1,7 @@
 var Router = require("koa-router"),
     middlewares = require("./middlewares"),
     lingo = require("lingo"),
+    _ = require("lodash"),
     util = require("util"),
     
     Constants = require("./constants");
@@ -76,6 +77,10 @@ module.exports = function createResource(name, options) {
       this.body = result;
     }
     
+    this.app.emit("datastack:create", {
+      collection: pluralizedName,
+      data: _.map(result, this.storage.idKey)
+    });
     this.status = 201;
   });
   
@@ -83,7 +88,12 @@ module.exports = function createResource(name, options) {
     debug("delete");
     var collection = yield this.collection(this.params[0]);
     yield collection.removeOne(this.params[1]);
+    this.app.emit("datastack:delete", {
+      collection: pluralizedName,
+      data: [this.params[1]]
+    });
     this.status = 204;
+    
   });
   
   router.put(pattern2, function*() {
@@ -112,6 +122,10 @@ module.exports = function createResource(name, options) {
       
       this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, record[this.storage.refKey]));
       
+      this.app.emit("datastack:update", {
+        collection: pluralizedName,
+        data: [id]
+      });
       return;
     }
     if(!record || this.get("if-none-match")) {//create
@@ -121,6 +135,11 @@ module.exports = function createResource(name, options) {
       this.status = 201;
       this.identify(result[0]);
       this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, result[0][this.storage.refKey]));
+      
+      this.app.emit("datastack:create", {
+        collection: pluralizedName,
+        data: _.map(result, this.storage.idKey)
+      });
       return;
     }
     debug("conflict, expect %s to equal %s", this.storage.etag(record), this.get("if-match"));
@@ -147,9 +166,13 @@ module.exports = function createResource(name, options) {
     debug("del %s, %s", this.params.id, this.params.ref);
     var collection = yield this.collection(pluralizedName);
     yield collection.removeOne(this.params.id, this.params.ref);
+    this.app.emit("datastack:delete", {
+      ref: true,
+      collection: pluralizedName,
+      data: [this.params.id]
+    });
     this.status = 204;
   });
-  
   
   return router;
 };

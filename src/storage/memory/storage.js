@@ -7,6 +7,9 @@ var Storage = function(options) {
   debug("construct");
   options = options || {};
   this.store = options.store || {};
+  if(process.env.NODE_ENV === "production") {
+    console.warn("Memory storage solution is not suitable for production");
+  }
 };
 
 // `idKey` should tell the database the primary key of records
