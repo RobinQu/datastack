@@ -1,5 +1,6 @@
 var debug = require("debug")("storage:memory"),
     util = require("util"),
+    crypto = require("crypto"),
     Collection = require("./collection");
 
 var Storage = function(options) {
@@ -83,6 +84,17 @@ Storage.prototype.buildProjection = function (projection) {
     return projection;
   }
   return projection ? projection.split(",") : [];
+};
+
+Storage.prototype.etag = function (record) {
+  var hash = crypto.createHash("sha1");
+  hash.update(JSON.stringify(record));
+  return hash.digest("hex");
+};
+
+// TODO: multipe version support
+Storage.prototype.ref = function () {
+  return 1;
 };
 
 

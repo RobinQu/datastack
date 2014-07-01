@@ -28,10 +28,11 @@ describe("Memory store", function() {
       title: "hello world",
       author: "unknown"
     }).end(function(res) {
+      var etag = res.headers.etag;
       expect(res.status).to.equal(201);
       request.get(uri, function(res) {//get
         expect(res.body.author).to.equal("unknown");
-        request.put(uri).send({author: "james"}).end(function(res) {//update
+        request.put(uri).send({author: "james"}).set("if-match", etag).end(function(res) {//update
           expect(res.status).to.equal(200);
           expect(store.books.data[0].author).to.equal("james");
           request.del(uri).end(function(res) {//delete

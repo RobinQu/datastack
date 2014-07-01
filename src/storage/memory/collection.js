@@ -10,10 +10,14 @@ var Collection = function(name) {
 };
 
 // find record by record id
-Collection.prototype.findById = function (id) {
+Collection.prototype.findOne = function (id, ref) {
   var self = this;
   return function*() {
-    return _.find(self.data, {id: id});
+    var query = {id: id};
+    if(ref) {
+      query.ref = ref;
+    }
+    return _.find(self.data, query);
   };
 };
 
@@ -70,7 +74,13 @@ Collection.prototype.find = function (condition, projection) {
     });
   }
   
-  return cursor;
+  // cursor.op.push(function() {
+  //   return _.where(this, {archived: false});
+  // });
+  //
+  return function*() {
+    return cursor;
+  };
 };
 
 Collection.prototype.insert = function (record) {
@@ -79,8 +89,10 @@ Collection.prototype.insert = function (record) {
   return function*() {
     if(util.isArray(record)) {
       self.data = self.data.concat(record);
+      return record;
     } else {
       self.data.push(record);
+      return [record];
     }
   };
 };

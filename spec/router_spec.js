@@ -106,8 +106,6 @@ describe("Router", function() {
       srv.close(done);
     });
     
-    
-    
     it("should have default pagination, query, sort", function(done) {
       
       request.get("http://localhost:8888/books", function(res) {

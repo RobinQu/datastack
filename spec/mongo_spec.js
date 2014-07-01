@@ -71,7 +71,7 @@ describe("Mongo storage", function() {
         request.get("http://localhost:8888/books/bigtitle1", function(res) {
           expect(res.status).to.equal(200);
           expect(res.body.author).to.equal("RobinQu");
-          expect(res.body.ctime).to.ok;
+          expect(res.body._ctime).to.ok;
           done();
         });
       });
@@ -112,7 +112,7 @@ describe("Mongo storage", function() {
           criteria: encodeURIComponent(JSON.stringify({a:1})),
           projection: encodeURIComponent(JSON.stringify({a:1}))
         }).end(function(res) {
-          console.log(res.body);
+          // console.log(res.body);
           expect(res.status).to.equal(200);
           expect(res.body.length).to.equal(1);
           expect(res.body[0].a).to.equal(1);

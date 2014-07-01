@@ -162,11 +162,12 @@ MongoStorage.prototype.handleUpdateValue = function (update) {
 };
 
 
-MongoStorage.prototype.handleRecordValue = function (value, force) {
+MongoStorage.prototype.handleRecordValue = function (value, force, time) {
   var self = this,
       idKey = this.idKey,
-      refKey = this.refKey,
-      time = Date.now();
+      refKey = this.refKey;
+
+  time = time || Date.now();
 
   var makeRecord = function(data) {
     var ret = data;
@@ -180,7 +181,7 @@ MongoStorage.prototype.handleRecordValue = function (value, force) {
     
     if(self.timestamp) {//handle timestamps
       //we fake time increments
-      ret[self.timeKey.mtime] = ret[self.timeKey.ctime] = new Date(++time);
+      ret[self.timeKey.mtime] = ret[self.timeKey.ctime] = new Date(time);
     }
     ret[self.archiveKey] = false;
     return ret;
@@ -188,7 +189,7 @@ MongoStorage.prototype.handleRecordValue = function (value, force) {
   
   if(util.isArray(value)) {//batch create
     value = value.map(function(v) {
-      return self.handleRecordValue(v, true);
+      return self.handleRecordValue(v, true, time++);
     });
   } else {//create a single record
     value = makeRecord(value);
