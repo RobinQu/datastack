@@ -150,20 +150,20 @@ describe("Mongo storage", function() {
   describe("update", function() {
     
     it("should update the created record", function(done) {
-      request.put("http://localhost:8888/books/bigtitle2")
-      .send({
+      
+      var uri = "http://localhost:8888/books/bigtitle2";
+      request.put(uri).send({
         title: "hello world",
         author: "unknown"
       }).end(function(res) {
         expect(res.status).to.equal(201);
         var ref = res.headers.etag;
-        var location = res.header.location;
-        request.put("http://localhost:8888" + location)
+        request.put(uri)
         .set("if-match", ref)
         .send({author: "james", date: new Date()})
         .end(function(res) {
           expect(res.status).to.equal(200);
-          request.get("http://localhost:8888" + location, function(res) {
+          request.get(uri, function(res) {
             var book = res.body;
             expect(book._ref).to.equal(2);
             expect(res.status).to.equal(200);
@@ -180,24 +180,81 @@ describe("Mongo storage", function() {
   describe("delete", function() {
     
     it("should delete an existing record", function(done) {
-      request.post("http://localhost:8888/books")
-      .send({
+      request.post("http://localhost:8888/books").send({
         title: "Big world",
         author: "unknown"
-      })
-      .end(function(res) {
+      }).end(function(res) {
+        var uri = "http://localhost:8888/books/" + res.body._storeKey;
         expect(res.status).to.equal(201);
-        var location = res.headers.location;
-        request.get("http://localhost:8888" + location, function(res) {
+        request.get(uri, function(res) {
           expect(res.status).to.equal(200);
           expect(res.body.author).to.equal("unknown");
-          request.del("http://localhost:8888" + location, function(res) {
+          request.del(uri, function(res) {
             expect(res.status).to.equal(204);
-            request.get("http://localhost:8888" + location, function(res) {
+            request.get(uri, function(res) {
               expect(res.status).to.equal(404);
               done();
             });
           });
+        });
+      });
+    });
+    
+  });
+  
+  describe("versions", function() {
+    it("should list all versions in DESC order", function(done) {
+      var uri = "http://localhost:8888/books/bigtitle3";
+      request.put(uri).send({title: "bigtitle", price: 10}).end(function(res) {
+        expect(res.headers["x-datastack-ref"]).to.equal("1");
+        request.put(uri).send({price:11}).set("if-match", res.headers.etag).end(function(res) {
+          expect(res.headers["x-datastack-ref"]).to.equal("2");
+          request.put(uri).send({price:12}).set("if-match", res.headers.etag).end(function(res) {
+            expect(res.headers["x-datastack-ref"]).to.equal("3");
+            
+            request.get(uri + "/_refs", function(res) {
+              expect(res.body).to.deep.equal([3,2,1]);
+              done();
+            });
+          });
+        });
+      });
+    });
+    
+    it("should get a single version", function(done) {
+      var uri = "http://localhost:8888/books/bigtitle4";
+      request.put(uri).send({title: "bigtitle", price: 10}).end(function(res) {
+        expect(res.headers["x-datastack-ref"]).to.equal("1");
+        request.put(uri).send({price:11}).set("if-match", res.headers.etag).end(function(res) {
+          expect(res.headers["x-datastack-ref"]).to.equal("2");
+          
+          request.get(uri + "/_refs/1", function(res) {
+            expect(res.body.price).to.equal(10);
+            done();
+          });
+          
+        });
+      });
+    });
+    
+    it("should delete a single record", function(done) {
+      var uri = "http://localhost:8888/books/bigtitle5";
+      request.put(uri).send({title: "bigtitle4", price: 10}).end(function(res) {
+        expect(res.headers["x-datastack-ref"]).to.equal("1");
+        request.put(uri).send({price:11}).set("if-match", res.headers.etag).end(function(res) {
+          expect(res.headers["x-datastack-ref"]).to.equal("2");
+          
+          request.del(uri + "/_refs/1", function(res) {
+            expect(res.status).to.equal(204);
+            request.get(uri + "/_refs/1", function(res) {
+              expect(res.status).to.equal(404);
+              request.get(uri + "/_refs/2", function(res) {
+                expect(res.status).to.equal(200);
+                done();
+              });
+            });
+          });
+          
         });
       });
     });

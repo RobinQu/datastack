@@ -97,7 +97,7 @@ Collection.prototype.insert = function (record) {
   };
 };
 
-Collection.prototype.removeById = function (id) {
+Collection.prototype.removeOne = function (id) {
   var self = this;
   return function*() {
     debug("delete by id %s", id);

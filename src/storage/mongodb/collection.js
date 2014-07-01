@@ -1,4 +1,5 @@
 var debug = require("debug")("mongo:collection"),
+    _ = require("lodash"),
     co = require("co");
 
 var CollectionAdapter = function(col) {
@@ -46,12 +47,12 @@ CollectionAdapter.prototype.updateById = function (id, update) {
   });
 };
 
-CollectionAdapter.prototype.removeById = function (id) {
+CollectionAdapter.prototype.removeOne = function (id, ref) {
   var self = this;
   
   return function*() {
-    var query = this.storage.buildSimpleQuery(id);
-    debug("remove by id %s", id);
+    var query = this.storage.buildSimpleQuery(id, ref);
+    debug("remove by query %o", query);
     //delete all archived as well
     delete query[this.storage.archiveKey];
     yield self._col.remove(query, {
@@ -65,6 +66,19 @@ CollectionAdapter.prototype.insert = function (data) {
   return function*() {
     debug("insert");
     return yield self._col.insert(this.storage.handleRecordValue(data));
+  };
+};
+
+CollectionAdapter.prototype.versions = function (id) {
+  var self = this;
+  
+  return function*() {
+    debug("versions");
+    var query = {}, projection = {}, sort = [[this.storage.timeKey.mtime, -1]];
+    query[this.storage.idKey] = id;
+    projection[this.storage.refKey] = 1;
+    var records = yield self._col.find(query, projection).sort(sort).toArray();
+    return _.map(records, this.storage.refKey);
   };
 };
 

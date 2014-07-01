@@ -65,13 +65,15 @@ module.exports = function createResource(name, options) {
     }
     
     var result = yield collection.insert(data);
-    
     //write resource location for single record creation
     if(!util.isArray(data) && result.length && result[0][this.storage.idKey]) {
-      this.set("Location", util.format("/%s/%s", pluralizedName, result[0][this.storage.idKey]));
+      this.identify(result[0]);
+      this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, result[0][this.storage.idKey], result[0][this.storage.refKey]));
+      this.body = result[0];
     } else {//mark as batch save
       debug("batch save %s", result.length);
       this.set("x-batch-save", result.length);
+      this.body = result;
     }
     
     this.status = 201;
@@ -80,7 +82,7 @@ module.exports = function createResource(name, options) {
   router.del(pattern2, function*() {
     debug("delete");
     var collection = yield this.collection(this.params[0]);
-    yield collection.removeById(this.params[1]);
+    yield collection.removeOne(this.params[1]);
     this.status = 204;
   });
   
@@ -104,7 +106,12 @@ module.exports = function createResource(name, options) {
       debug("update");
       yield collection.updateById(id, data);
       this.status = 200;
-      // this.set("Location", util.format("/%s/%s", pluralizedName, id));
+      //TODO: save this query
+      record = yield collection.findOne(id);
+      this.identify(record);
+      
+      this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, record[this.storage.refKey]));
+      
       return;
     }
     if(!record || this.get("if-none-match")) {//create
@@ -113,11 +120,34 @@ module.exports = function createResource(name, options) {
       result = yield collection.insert(data);
       this.status = 201;
       this.identify(result[0]);
-      this.set("Location", util.format("/%s/%s", pluralizedName, id));
+      this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, result[0][this.storage.refKey]));
       return;
     }
-    
+    debug("conflict, expect %s to equal %s", this.storage.etag(record), this.get("if-match"));
     this.status = 409;
+  });
+  
+  router.get("/" + pluralizedName + "/:id/_refs", function*() {
+    debug("versions");
+    var collection = yield this.collection(pluralizedName);
+    this.body = yield collection.versions(this.params.id);
+  });
+  
+  router.get("/" + pluralizedName + "/:id/_refs/:ref", function*() {
+    debug("get %s, %s", this.params.id, this.params.ref);
+    var collection = yield this.collection(pluralizedName);
+    var one = yield collection.findOne(this.params.id, this.params.ref, false);
+    if(one) {
+      this.identify(one);
+      this.body = one;
+    }
+  });
+  
+  router.del("/" + pluralizedName + "/:id/_refs/:ref", function*() {
+    debug("del %s, %s", this.params.id, this.params.ref);
+    var collection = yield this.collection(pluralizedName);
+    yield collection.removeOne(this.params.id, this.params.ref);
+    this.status = 204;
   });
   
   

@@ -129,12 +129,14 @@ MongoStorage.prototype.buildProjection = function(subject) {
 
 MongoStorage.prototype.buildSimpleQuery = function (id, ref, archived) {
   var query = {};
+  
   query[this.idKey] = this.objectIdAsKey ? new mongo.ObjectId(id) : id;
-  // query.archived = false;
-  if(ref) {
-    query[this.refKey] = ref;
+
+  if(ref) {//if we are query against ref, we don't need to specify `archived`
+    query[this.refKey] = parseInt(ref, 10);
+  } else {
+    query[this.archiveKey] = !!archived;
   }
-  query[this.archiveKey] = !!archived;
   return query;
 };
 
