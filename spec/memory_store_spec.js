@@ -20,7 +20,7 @@ describe("Memory store", function() {
   });
   app.use(datastack.resource("book").middleware());
   
-  xit("should work with simple hash", function(done) {
+  it("should work with simple hash", function(done) {
     
     srv = app.listen(PORT);
     var uri = "http://localhost:8888/books/hello";
@@ -51,7 +51,7 @@ describe("Memory store", function() {
     });
   });
   
-  xit("should find by query and projection", function(done) {
+  it("should find by query and projection", function(done) {
     srv = app.listen(PORT);
     request.post("http://localhost:8888/books")
     .send([{a:1, b:2}, {a:2, c:3}, {a:2, b:2}]).end(function(res) {
@@ -71,7 +71,7 @@ describe("Memory store", function() {
     });
   });
 
-  xit("should work with pagination", function(done) {
+  it("should work with pagination", function(done) {
     srv = app.listen(PORT);
     request.post("http://localhost:8888/books")
     .send([{a:1, b:2}, {a:2, c:3}, {a:2, b:2}]).end(function(res) {
