@@ -12,7 +12,6 @@ var datastack = require(".."),
 
 describe("Websocket", function() {
   
-  
   describe("event subscription", function() {
     
     var app = koa(), srv;
@@ -137,7 +136,31 @@ describe("Websocket", function() {
       });
     });
     
+    
+    it("should support event filter", function(done) {
+      notifier.register({
+        collection: "books",
+        events: [datastack.Constants.events.CREATE]
+      });
+    
+      var uri = "http://localhost:8888/books/2";
+      request.put(uri).send({//create
+        title: "hello world"
+      }).end(function(res) {
+        var message = JSON.parse(messageCallback.firstCall.args[0]);
+        expect(message.type).to.equal("datastack:create");
+        request.put(uri).set("if-match", res.headers.etag).send({//update
+          title: "nice world"
+        }).end(function() {
+          expect(messageCallback.callCount).to.equal(1);
+          done();
+        });
+      });
+    });
+    
   });
   
+  
+
 
 });
