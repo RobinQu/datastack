@@ -72,6 +72,7 @@ InternalServer.prototype._trackClient = function (channel, client) {
   list.push(client);
   
   client.on("close", function() {
+    console.log();
     var idx = list.indexOf(client);
     if(idx > -1) {
       list.splice(idx, 1);
@@ -158,9 +159,12 @@ InternalServer.prototype.broadcast = function (data) {
 };
 
 InternalServer.prototype.close = function() {
+  debug("close");
+  this._server.removeListener("upgrade", this._upgrade);
   var error;
   try {
     _.each(this.clients, function(clients) {
+      debug("close %d clients", clients.length);
       _.each(clients, function(client) {
         client.terminate();
       });

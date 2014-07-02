@@ -1,4 +1,4 @@
-/*global describe, it, before, after, beforeEach */
+/*global describe, it, beforeEach, afterEach */
 
 var datastack = require(".."),
     PORT = process.env.PORT || 8888,
@@ -21,29 +21,28 @@ describe("Websocket", function() {
   
     var notifier = datastack.notifier.websocket(app);
     
+    var client, messageCallback;
     
-    before(function(done) {
+    beforeEach(function(done) {
       srv = app.listen(PORT, done);
       notifier.attach(srv).register("books");
+      client = new Websocket("ws://localhost:8888/books/_subscription");
+      messageCallback = sinon.spy();
+      client.on("message", messageCallback);
     });
-    after(function(done) {
+    
+    afterEach(function(done) {
       notifier.detach(srv);
       srv.close(done);
     });
     
-    // var client, messageCallback;
-    // beforeEach(function(done) {
-    //   client = new Websocket("ws://localhost:8888/books/_subscription");
-    //   messageCallback = sinon.spy();
-    //   client.on("message", messageCallback);
-    //   done();
-    // });
+    
     
     it("should recieve create event after PUT creation", function(done) {
-      var client, messageCallback;
-      client = new Websocket("ws://localhost:8888/books/_subscription");
-      messageCallback = sinon.spy();
-      client.on("message", messageCallback);
+      // var client, messageCallback;
+      // client = new Websocket("ws://localhost:8888/books/_subscription");
+      // messageCallback = sinon.spy();
+      // client.on("message", messageCallback);
 
       request.put("http://localhost:8888/books/bigtitle").send({
         title: "hello, world"
@@ -59,10 +58,10 @@ describe("Websocket", function() {
     });
     
     it("should recieve create event after POST creation", function(done) {
-      var client, messageCallback;
-      client = new Websocket("ws://localhost:8888/books/_subscription");
-      messageCallback = sinon.spy();
-      client.on("message", messageCallback);
+      // var client, messageCallback;
+      // client = new Websocket("ws://localhost:8888/books/_subscription");
+      // messageCallback = sinon.spy();
+      // client.on("message", messageCallback);
       
       request.post("http://localhost:8888/books").send([
         {title:"hello world"},
@@ -71,20 +70,42 @@ describe("Websocket", function() {
         expect(e.status).to.equal(201);
         var message = JSON.parse(messageCallback.firstCall.args[0]);
         expect(message.type).to.equal(datastack.Constants.events.CREATE);
-        expect(message.data).to.deep.equal(["hello world", "nice day"]);
+        expect(message.data.length).to.deep.equal(2);
         // client.terminate();
         done();
       });
     });
     
-    
+    it("should recieve update event after PUT", function(done) {
+      var uri = "http://localhost:8888/books/1";
+      
+      // var client, messageCallback;
+      // client = new Websocket("ws://localhost:8888/books/_subscription");
+      // messageCallback = sinon.spy();
+      // client.on("message", messageCallback);
+      
+      request.put(uri).send({//create
+        title: "hello world"
+      }).end(function(res) {
+        expect(res.status).to.equal(201);
+        var message = JSON.parse(messageCallback.firstCall.args[0]);
+        expect(message.type).to.equal("datastack:create");
+        request.put(uri).set("if-match", res.headers.etag).send({//update
+          title: "nice world"
+        }).end(function(res) {
+          expect(messageCallback.callCount).to.equal(2);
+          var message = JSON.parse(messageCallback.secondCall.args[0]);
+          expect(res.status).to.equal(200);
+          expect(message.data.from).to.equal(1);
+          expect(message.data.to).to.equal(2);
+          // client.terminate();
+          done();
+        });
+        
+      });
+    });
     
   });
   
 
-  
-  
-  
-  
-  
 });

@@ -1,5 +1,6 @@
 var _ = require("lodash"),
     debug = require("debug")("storage:memory"),
+    uuid = require("node-uuid"),
     util = require("util");
 
 // Collection class
@@ -98,6 +99,9 @@ Collection.prototype.insert = function (record) {
       record.forEach(function(r) {
         r._archived = false;
         r._ref = 1;
+        if(!r.id) {
+          r.id = uuid.v4();
+        }
       });
       self.data = self.data.concat(record);
       end = self.data.length;
@@ -106,6 +110,9 @@ Collection.prototype.insert = function (record) {
     } else {
       record._archived = false;
       record._ref = 1;
+      if(!record.id) {
+        record.id = uuid.v4();
+      }
       self.data.push(record);
       return [record];
     }
