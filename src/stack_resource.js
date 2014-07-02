@@ -77,6 +77,7 @@ module.exports = function createResource(name, options) {
       this.body = result;
     }
     
+    console.log(result);
     this.app.emit(Constants.events.CREATE, {
       collection: pluralizedName,
       data: _.map(result, this.storage.idKey)
