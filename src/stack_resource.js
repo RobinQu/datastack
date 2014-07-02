@@ -3,7 +3,6 @@ var Router = require("koa-router"),
     lingo = require("lingo"),
     _ = require("lodash"),
     util = require("util"),
-    
     Constants = require("./constants");
 
 
@@ -78,7 +77,7 @@ module.exports = function createResource(name, options) {
       this.body = result;
     }
     
-    this.app.emit("datastack:create", {
+    this.app.emit(Constants.events.CREATE, {
       collection: pluralizedName,
       data: _.map(result, this.storage.idKey)
     });
@@ -91,14 +90,17 @@ module.exports = function createResource(name, options) {
     yield collection.removeOne(this.params[1]);
     this.app.emit("datastack:delete", {
       collection: pluralizedName,
-      data: [this.params[1]]
+      data: {
+        id: this.params[1],
+        ref: "*"
+      }
     });
     this.status = 204;
     
   });
   
   router.put(pattern2, function*() {
-    var collection, id, record, data, result;
+    var collection, id, record, newRecord, data, result;
     id = this.params[1];
     collection = yield this.collection(this.params[0]);
     data = this.request.body;
@@ -118,14 +120,18 @@ module.exports = function createResource(name, options) {
       yield collection.updateById(id, data);
       this.status = 200;
       //TODO: save this query
-      record = yield collection.findOne(id);
-      this.identify(record);
+      newRecord = yield collection.findOne(id);
+      this.identify(newRecord);
       
-      this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, record[this.storage.refKey]));
+      this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, this.storage.ref(newRecord)));
       
-      this.app.emit("datastack:update", {
+      this.app.emit(Constants.events.UPDATE, {
         collection: pluralizedName,
-        data: [id]
+        data: {
+          id: id,
+          from: this.storage.ref(record),
+          to: this.storage.ref(newRecord)
+        }
       });
       return;
     }
@@ -137,7 +143,7 @@ module.exports = function createResource(name, options) {
       this.identify(result[0]);
       this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, result[0][this.storage.refKey]));
       
-      this.app.emit("datastack:create", {
+      this.app.emit(Constants.events.CREATE, {
         collection: pluralizedName,
         data: _.map(result, this.storage.idKey)
       });
@@ -168,10 +174,12 @@ module.exports = function createResource(name, options) {
     debug("del %s, %s", this.params.id, this.params.ref);
     var collection = yield this.collection(pluralizedName);
     yield collection.removeOne(this.params.id, this.params.ref);
-    this.app.emit("datastack:delete", {
-      ref: true,
+    this.app.emit(Constants.events.DELETE, {
       collection: pluralizedName,
-      data: [this.params.id]
+      data: {
+        id: this.params.id,
+        ref: this.params.ref
+      }
     });
     this.status = 204;
   });

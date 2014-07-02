@@ -21,7 +21,16 @@ describe("WSS", function() {
     srv = app.listen(PORT);
   
     //TODO: more graceful API
-    datastack.subscription.websocket(app, srv, {path: "/books/_subscription"});
+    
+    var notifier = datastack.notifier.websocket(app);
+    notifier.attach(srv, {
+      collections: {
+        "books": {
+          // prefix: "",
+          // events: [datastack.events.CREATE],
+        }
+      }
+    });
     
     //client code
     var client = new Websocket("ws://localhost:8888/books/_subscription");
