@@ -8,21 +8,21 @@ Human-friendly RESTful middlewares for koa
 
 Building your API like a ninja:
 
-```
-var datastack = require("datastack"),
-    koa = require("koa");
 
-var app = koa();
-datastack(app, {
-  storage: {
-    type: "mongodb",
-    uri: "mongodb://127.0.0.1:27017/zoo"
-  }
-});
-app.use(datastack.resource("cat"));
-app.use(datastack.resource("dog"));
-app.listen(porcess.env.PORT || 8888);
-```
+    var datastack = require("datastack"),
+        koa = require("koa");
+
+    var app = koa();
+    datastack(app, {
+      storage: {
+        type: "mongodb",
+        uri: "mongodb://127.0.0.1:27017/zoo"
+      }
+    });
+    app.use(datastack.resource("cat"));
+    app.use(datastack.resource("dog"));
+    app.listen(porcess.env.PORT || 8888);
+
 
 And you can now have fully operational RESTful API (and more) against two different `collection`.
 
@@ -103,7 +103,7 @@ We have `websocket-notifier` built-in.
 * Endpoint: `/:collection/:id/_subscription`
 * Message contains the stringified version of `events` mentioned above
 
-There will be many more notifiers liek:
+There will be many more notifiers:
 
 * APN
 * Mails
