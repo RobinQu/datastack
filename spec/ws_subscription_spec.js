@@ -137,7 +137,6 @@ describe("Websocket", function() {
     
     
     it("should support event filter", function(done) {
-      console.log(notifier.configure(srv));
       notifier.configure(srv).register({
         collection: "books",
         events: [datastack.Constants.events.CREATE]

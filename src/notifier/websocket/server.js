@@ -72,7 +72,6 @@ InternalServer.prototype._trackClient = function (channel, client) {
   list.push(client);
   
   client.on("close", function() {
-    console.log();
     var idx = list.indexOf(client);
     if(idx > -1) {
       list.splice(idx, 1);

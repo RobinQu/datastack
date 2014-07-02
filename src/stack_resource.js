@@ -114,7 +114,7 @@ module.exports = function createResource(name, options) {
       return;
     }
     record = yield collection.findOne(id);
-    // console.log(record, this.get("if-match"));
+
     if(record && this.storage.etag(record) === this.get("if-match")) {//update
       debug("update");
       yield collection.updateById(id, data);
@@ -124,6 +124,7 @@ module.exports = function createResource(name, options) {
       newRecord = yield collection.findOne(id);
       
       debug("from %s to %s", this.storage.ref(record), this.storage.ref(newRecord));
+      
       this.identify(newRecord);
       this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, this.storage.ref(newRecord)));
       
