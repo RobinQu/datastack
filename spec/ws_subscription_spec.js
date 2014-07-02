@@ -6,6 +6,7 @@ var datastack = require(".."),
     expect = require("chai").expect,
     koa = require("koa"),
     sinon = require("sinon"),
+    debug = require("debug")("spec:wss"),
     Websocket = require("ws");
 
 
@@ -24,6 +25,7 @@ describe("Websocket", function() {
     var client, messageCallback;
     
     beforeEach(function(done) {
+      debug("before each");
       srv = app.listen(PORT, done);
       notifier.attach(srv).register("books");
       client = new Websocket("ws://localhost:8888/books/_subscription");
@@ -32,6 +34,7 @@ describe("Websocket", function() {
     });
     
     afterEach(function(done) {
+      debug("after each");
       notifier.detach(srv);
       srv.close(done);
     });
