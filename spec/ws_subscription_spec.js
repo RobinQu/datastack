@@ -108,6 +108,35 @@ describe("Websocket", function() {
       });
     });
     
+    it("should recieve delete after DEL", function(done) {
+      var uri = "http://localhost:8888/books/2";
+      request.put(uri).send({//create
+        title: "hello world"
+      }).end(function(res) {
+        expect(res.status).to.equal(201);
+        var message = JSON.parse(messageCallback.firstCall.args[0]);
+        expect(message.type).to.equal("datastack:create");
+        request.put(uri).set("if-match", res.headers.etag).send({//update
+          title: "nice world"
+        }).end(function() {
+          
+          request.del(uri+"/_refs/1", function(res) {//delete ref
+            expect(res.status).to.equal(204);
+            var message = JSON.parse(messageCallback.getCall(2).args[0]);
+            expect(message.type).to.equal("datastack:delete");
+            expect(message.data.ref).to.equal("1");
+            request.del(uri, function() {
+              var message = JSON.parse(messageCallback.getCall(3).args[0]);
+              expect(message.type).to.equal("datastack:delete");
+              expect(message.data.ref).to.equal("*");
+              done();
+            });
+          });
+        });
+        
+      });
+    });
+    
   });
   
 
