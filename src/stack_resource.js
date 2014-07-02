@@ -120,9 +120,11 @@ module.exports = function createResource(name, options) {
       yield collection.updateById(id, data);
       this.status = 200;
       //TODO: save this query
-      newRecord = yield collection.findOne(id);
-      this.identify(newRecord);
       
+      newRecord = yield collection.findOne(id);
+      
+      debug("from %s to %s", this.storage.ref(record), this.storage.ref(newRecord));
+      this.identify(newRecord);
       this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, this.storage.ref(newRecord)));
       
       this.app.emit(Constants.events.UPDATE, {

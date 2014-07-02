@@ -17,6 +17,8 @@ Collection.prototype.findOne = function (id, ref) {
     var query = {id: id};
     if(ref) {
       query._ref = parseInt(ref, 10);
+    } else {
+      query._archived = false;
     }
     debug("find one by %o", query);
     return _.find(self.data, query);
@@ -133,12 +135,10 @@ Collection.prototype.updateById = function (id, updates) {
     debug("update by id %s, %o", id, updates);
     var idx = _.findIndex(self.data, {id:id});
     if(idx > -1) {
-      // archive old one
-      self.data.push(_.extend({}, self.data[idx], {_archived: true}));
-      //apply changes
-      self.data[idx] = _.extend(self.data[idx], updates);
-      //increment `_ref`
-      self.data[idx]._ref ++;
+      var newOne = _.extend(_.clone(self.data[idx]), updates);
+      newOne._ref ++;
+      self.data.push(newOne);
+      self.data[idx]._archived = true;
     }
   };
 };

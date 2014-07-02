@@ -38,7 +38,6 @@ WSNotifier.prototype.detach = function (httpServer) {
 };
 
 WSNotifier.prototype.handleEvent = function(type, data) {
-  console.log(type, data);
   this.servers.forEach(function(server) {
     data.type = type;
     server.broadcast(data);
