@@ -26,7 +26,7 @@ describe("Websocket", function() {
     beforeEach(function(done) {
       debug("before each");
       srv = app.listen(PORT, done);
-      notifier.attach(srv).register("books");
+      notifier.attach(srv).configure(srv).register("books");
       client = new Websocket("ws://localhost:8888/books/_subscription");
       messageCallback = sinon.spy();
       client.on("message", messageCallback);
@@ -37,7 +37,6 @@ describe("Websocket", function() {
       notifier.detach(srv);
       srv.close(done);
     });
-    
     
     
     it("should recieve create event after PUT creation", function(done) {
@@ -138,7 +137,8 @@ describe("Websocket", function() {
     
     
     it("should support event filter", function(done) {
-      notifier.register({
+      console.log(notifier.configure(srv));
+      notifier.configure(srv).register({
         collection: "books",
         events: [datastack.Constants.events.CREATE]
       });
@@ -161,6 +161,45 @@ describe("Websocket", function() {
   });
   
   
+  describe("server lifecycle", function() {
+    
+    var app = koa(), srv;
 
+    datastack(app);
+    app.use(datastack.resource("book").middleware());
+  
+    var notifier = datastack.notifier.websocket(app);
+    
+    it("should stop publish after closed", function(done) {
+      
+      srv = app.listen(PORT, done);
+      notifier.attach(srv).configure(srv).register("books");
+      var client = new Websocket("ws://localhost:8888/books/_subscription");
+      var messageCallback = sinon.spy();
+      client.on("message", messageCallback);
+      
+      var uri = "http://localhost:8888/books/3";
+      request.put(uri).send({//create
+        title: "hello world"
+      }).end(function(res) {
+        var message = JSON.parse(messageCallback.firstCall.args[0]);
+        expect(message.type).to.equal("datastack:create");
+        
+        //stop listening
+        notifier.detach(srv);
+        
+        request.put(uri).set("if-match", res.headers.etag).send({//update
+          title: "nice world"
+        }).end(function() {
+          expect(messageCallback.callCount).to.equal(1);
+          done();
+        });
+        
+      });
+      
+      
+    });
+    
+  });
 
 });

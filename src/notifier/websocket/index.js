@@ -15,17 +15,17 @@ var WSNotifier = function(app) {
 };
 
 WSNotifier.prototype.attach = function (httpServer) {
-  if(httpServer._wsnotifier) {
+  if(httpServer._wsInstance) {
     throw new Error("cannot bind multiple websocket notifier on one http server");
   }
   var instance = new Server(httpServer);
-  httpServer._wsnotifier = instance;
+  httpServer._wsInstance = instance;
   this.servers.push(instance);
-  return instance;
+  return this;
 };
 
 WSNotifier.prototype.detach = function (httpServer) {
-  var instance = httpServer._wsnotifier;
+  var instance = httpServer._wsInstance;
   if(instance) {
     try {
       instance.close();
@@ -35,6 +35,11 @@ WSNotifier.prototype.detach = function (httpServer) {
       this.servers.splice(this.servers.indexOf(instance), 1);
     }
   }
+  return this;
+};
+
+WSNotifier.prototype.configure = function (httpServer) {
+  return httpServer._wsInstance;
 };
 
 WSNotifier.prototype.handleEvent = function(type, data) {
