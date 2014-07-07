@@ -1,23 +1,22 @@
 var koa = require("koa"),
-    util = require("util");
+    http = require("http"),
+    util = require("util"),
+    pluggable = require("./pluggable");
 
-var StackApp = function(server, options) {
+var StackApp = function(server) {
   koa.call(this);
-  
+  pluggable(this);
   this.server = server;
-  this.plugins = [];
 };
 
 util.inherits(StackApp, koa);
 
-StackApp.prototype.plugin = function (plugin) {
-  this.plugins.push(plugin);
-  plugin.signal("init", this);
-};
-
 StackApp.prototype.listen = function () {
+  if(!this.server) {
+    this.server = http.createServer(this.callback());
+  }
   this.server.listen.apply(this.server, arguments);
-  this.server.on("listening", this.notify.bind(this, "listening", this));
+  this.server.on("listening", this.notify.bind(this, "listening", this.server));
 };
 
 StackApp.prototype.notify = function (signal, data) {
@@ -26,6 +25,5 @@ StackApp.prototype.notify = function (signal, data) {
     this.plugins[i].signal(signal, data);
   }
 };
-
 
 exports = StackApp;

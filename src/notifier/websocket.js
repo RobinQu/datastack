@@ -23,23 +23,16 @@ var WebsocketServer = function() {
 
 util.inherits(WebsocketServer, EE);
 
-WebsocketServer.prototype.hook = function(app) {
+WebsocketServer.prototype.hook = function(server) {
   // http server
-  
-  //`app.server` can be changed, so we setup a getter
-  Object.defineProperty("_server", {
-    get: function() {
-      return app.server;
-    },
-    configurable: false,
-    enumerable: true
-  });
-  
+  this._server = server;
+  // flag
+  server.notifierEnabled = true;
   
   //handle server upgrade
   this._upgrade = this.upgrade.bind(this);
-  this.server.on("upgrade", this._upgrade);
-  
+  this._server.on("upgrade", this._upgrade);
+  return this;
 };
 
 WebsocketServer.prototype.abortConnection = function (socket) {
@@ -89,7 +82,6 @@ WebsocketServer.prototype._trackClient = function (channel, client) {
       list.splice(idx, 1);
     }
   });
-  
 };
 
 WebsocketServer.prototype.shouldHandle = function (req) {
@@ -169,9 +161,18 @@ WebsocketServer.prototype.broadcast = function (data) {
   }
 };
 
+
+WebsocketServer.prototype.detach = function () {
+  this._server.notifierEnabled = false;
+  this._server.removeListener("upgrade", this._upgrade);
+  this._server = null;
+  return this;
+};
+
 WebsocketServer.prototype.close = WebsocketServer.prototype.disconnect = function() {
   debug("close");
-  this._server.removeListener("upgrade", this._upgrade);
+  //release server events
+  this.detach();
   var error;
   try {
     _.each(this.clients, function(clients) {

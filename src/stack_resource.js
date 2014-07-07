@@ -100,6 +100,7 @@ module.exports = function createResource(name, options) {
   });
   
   router.put(pattern2, function*() {
+    debug("put");
     var collection, id, record, newRecord, data, result;
     id = this.params[1];
     collection = yield this.collection(this.params[0]);

@@ -1,11 +1,11 @@
 var Plugin = require("./plugin"),
     debug = require("debug")("plugin:storage"),
-    assert = require("assert"),
     util = require("util");
     
 var StoragePlugin = function(options) {
   Plugin.call();
-  assert(options, "should provide options");
+  options = options || {type: "memory"};
+  this.name = "storage";
   try {
     this.storage = typeof options.connect === "function" ? options : (function() {
       var solution = require("../storage/" + options.type);
@@ -33,10 +33,12 @@ StoragePlugin.prototype.init = function (app) {
     this.set("x-datastack-ref", this.storage.ref(record));
   };
   
-  app.use(function*() {
+  app.use(function*(next) {
     this.collection = this.storage.collection.bind(this.storage);
+    yield next;
   });
   
+  return this;
 };
 
 StoragePlugin.prototype.dispose = function () {

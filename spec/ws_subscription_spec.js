@@ -14,27 +14,27 @@ describe("Websocket", function() {
   
   describe("event subscription", function() {
     
-    var app = koa(), srv;
+    var app = koa(), srv, notifier;
 
     datastack(app);
     app.use(datastack.resource("book").middleware());
-  
-    var notifier = datastack.notifier.websocket(app);
     
     var client, messageCallback;
     
     beforeEach(function(done) {
       debug("before each");
+      notifier = app.plugin("notifier").notifier;
       srv = app.listen(PORT, done);
-      notifier.attach(srv).configure(srv).register("books");
+      notifier.hook(srv).register("books");
       client = new Websocket("ws://localhost:8888/books/_subscription");
       messageCallback = sinon.spy();
       client.on("message", messageCallback);
+      console.log("!!!!!");
     });
     
     afterEach(function(done) {
       debug("after each");
-      notifier.detach(srv);
+      notifier.close();
       srv.close(done);
     });
     
@@ -137,7 +137,7 @@ describe("Websocket", function() {
     
     
     it("should support event filter", function(done) {
-      notifier.configure(srv).register({
+      notifier.register({
         collection: "books",
         events: [datastack.Constants.events.CREATE]
       });
@@ -162,17 +162,17 @@ describe("Websocket", function() {
   
   describe("server lifecycle", function() {
     
-    var app = koa(), srv;
+    var app = koa(), srv, notifier;
 
     datastack(app);
     app.use(datastack.resource("book").middleware());
-  
-    var notifier = datastack.notifier.websocket(app);
     
     it("should stop publish after closed", function(done) {
       
       srv = app.listen(PORT, done);
-      notifier.attach(srv).configure(srv).register("books");
+      notifier = app.plugin("notifier").notifier;
+      notifier.hook(srv);
+      notifier.register("books");
       var client = new Websocket("ws://localhost:8888/books/_subscription");
       var messageCallback = sinon.spy();
       client.on("message", messageCallback);
@@ -185,7 +185,7 @@ describe("Websocket", function() {
         expect(message.type).to.equal("datastack:create");
         
         //stop listening
-        notifier.detach(srv);
+        notifier.close();
         
         request.put(uri).set("if-match", res.headers.etag).send({//update
           title: "nice world"

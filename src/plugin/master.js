@@ -8,6 +8,7 @@ var MasterPlugin = function(options) {
   options = options || {};
   this.bodyparser = options.bodyparser;
   this.qs = options.ps;
+  this.name = "master";
 };
 
 util.inherits(MasterPlugin, Plugin);
@@ -33,6 +34,8 @@ MasterPlugin.prototype.init = function(app) {
     
     yield next;
   });
+  
+  return this;
   
 };
 

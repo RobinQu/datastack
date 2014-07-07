@@ -22,8 +22,9 @@ describe("Memory store", function() {
   
   it("should work with simple hash", function(done) {
     
-    srv = app.listen(PORT);
     var uri = "http://localhost:8888/books/hello";
+    srv = app.listen(PORT);
+    
     request.put(uri).send({//create
       title: "hello world",
       author: "unknown"
