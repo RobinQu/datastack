@@ -1,5 +1,5 @@
 module.exports = function(app, options) {
-
+  options = options || {};
   require("./pluggable")(app);
   var plugins = require("./plugin");
   var master = new plugins.Master();
