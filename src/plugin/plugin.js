@@ -1,4 +1,5 @@
 var EE = require("events").EventEmitter,
+    _ = require("lodash"),
     util = require("util");
 
 var Plugin = function() {
@@ -16,13 +17,20 @@ Plugin.prototype.signal = function (signal, data) {
     this.dispose();
     break;
   default:
+    var methodName = "on" + _.capitalize(signal);
+    if(this[methodName]) {
+      this[methodName](data);
+    }
     this.emit(signal, data);
-    break;
   }
 };
 
 Plugin.prototype.init = function() {
-  console.log("not implemented");
+  //TO BE IMPLEMENTED
+};
+
+Plugin.prototype.dispose = function () {
+  //TO BE IMPLEMENTED
 };
 
 module.exports = Plugin;

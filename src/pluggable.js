@@ -1,3 +1,5 @@
+var debug = require("debug")("pluggable");
+
 var Pluggable = function() {
   
   this.plugins = [];
@@ -18,6 +20,17 @@ var Pluggable = function() {
     var i,len;
     for(i=0,len=this.plugins.length; i<len; i++) {
       this.plugins[i].signal(signal, data);
+    }
+  };
+  
+  this.uninstall = function() {
+    var i,len;
+    for(i=0,len=this.plugins.length; i<len; i++) {
+      try {
+        this.plugins[i].dispose();
+      } catch(e) {
+        debug(e);
+      }
     }
   };
   

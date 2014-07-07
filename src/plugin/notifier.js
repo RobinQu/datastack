@@ -1,6 +1,7 @@
 var Plugin = require("./plugin"),
     debug = require("debug")("plugin:storage"),
     Constants = require("../constants"),
+    cluster = require("cluster"),
     util = require("util");
 
 
@@ -33,12 +34,21 @@ NotifierPlugin.prototype.init = function (app) {
   for(i=0,len=events.length; i<len; i++) {
     app.on(events[i], this.notify.bind(this, events[i]));
   }
+  this.notifier.on("sent", function(data) {
+    //proxy every sent message to other app
+    app.emit("sync", data);
+  });
   return this;
 };
 
 NotifierPlugin.prototype.notify = function(type, data) {
   debug("notify");
+  if(cluster.isWorker && data._source && cluster.worker.id === data._source) {//in worker mode and message originates form itself
+    debug("Reject to send messages (%s) that are synced from myself! %s", type, cluster.worker.id);
+    return;
+  }
   data.type = type;
+  //send to internal clients
   this.notifier.broadcast(data);
 };
 

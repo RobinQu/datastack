@@ -149,7 +149,8 @@ WebsocketServer.prototype.unregister = function(channel) {
 
 WebsocketServer.prototype.broadcast = function (data) {
   var clients = this.clients[data.collection],
-      channel = this.channels[data.collection];
+      channel = this.channels[data.collection],
+      self = this;
 
   if(!channel) {
     debug("drop non-interested message %s", data.type);
@@ -160,6 +161,8 @@ WebsocketServer.prototype.broadcast = function (data) {
     debug("broadcast event '%s' to %d client(s)", data.type, clients.length);
     clients.forEach(function(client) {
       client.send(JSON.stringify(data));
+      //signal sent
+      self.emit("sent", data);
     });
   } else {
     debug("events %s not exposed by collection %s; won't braodcast", data.type, data.collection);

@@ -38,7 +38,8 @@
     "qs": "^0.6.6",
     "koa-qs": "^1.0.0",
     "path-to-regexp": "^0.2.1",
-    "ws": "^0.4.31"
+    "ws": "^0.4.31",
+    "recluster": "^0.3.7"
   },
   "devDependencies": {
     "superagent": "^0.18.0",
