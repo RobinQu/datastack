@@ -1,5 +1,5 @@
 var Router = require("koa-router"),
-    middlewares = require("./middlewares"),
+    middlewares = require("./middleware"),
     lingo = require("lingo"),
     _ = require("lodash"),
     util = require("util"),

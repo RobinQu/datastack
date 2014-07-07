@@ -1,36 +1,48 @@
-var debug = require("debug")("datastack:notifier:server"),
+var debug = require("debug")("notifier:websocket"),
     ws = require("ws"),
     Buffer = require("buffer").Buffer,
     util = require("util"),
     url = require("url"),
     _ = require("lodash"),
     assert = require("assert"),
-    Constants = require("../../constants"),
-    EventEmitter = require("events").EventEmitter;
+    Constants = require("../constants"),
+    EE = require("events").EventEmitter;
 
 
-var InternalServer = function(server) {
+var WebsocketServer = function() {
+  EE.call(this);
   // store the clients
   this.clients = {};
   // channel info
   this.channels = {};
   // wanted endpoint paths
   this.paths = [];
-  // http server
-  this._server = server;
-  
-  //handle server upgrade
-  this._upgrade = this.upgrade.bind(this);
-  server.on("upgrade", this._upgrade);
-  
-  
   //to cheat `ws` module
   this.options = {};
 };
 
-util.inherits(InternalServer, EventEmitter);
+util.inherits(WebsocketServer, EE);
 
-InternalServer.prototype.abortConnection = function (socket) {
+WebsocketServer.prototype.hook = function(app) {
+  // http server
+  
+  //`app.server` can be changed, so we setup a getter
+  Object.defineProperty("_server", {
+    get: function() {
+      return app.server;
+    },
+    configurable: false,
+    enumerable: true
+  });
+  
+  
+  //handle server upgrade
+  this._upgrade = this.upgrade.bind(this);
+  this.server.on("upgrade", this._upgrade);
+  
+};
+
+WebsocketServer.prototype.abortConnection = function (socket) {
   try {
     var resp = ["HTTP/1.1 400 Bad Request", "", ""].join("\r\n");
     socket.write(resp);
@@ -41,7 +53,7 @@ InternalServer.prototype.abortConnection = function (socket) {
   }
 };
 
-InternalServer.prototype.upgrade = function(req, socket, upgradeHead) {
+WebsocketServer.prototype.upgrade = function(req, socket, upgradeHead) {
   
   if(!this.shouldHandle(req)) {
     debug("bypass %s", req.url);
@@ -64,7 +76,7 @@ InternalServer.prototype.upgrade = function(req, socket, upgradeHead) {
   });
 };
 
-InternalServer.prototype._trackClient = function (channel, client) {
+WebsocketServer.prototype._trackClient = function (channel, client) {
   var list = this.clients[channel.collection];
   if(!list) {
     list = this.clients[channel.collection] = [];
@@ -80,19 +92,19 @@ InternalServer.prototype._trackClient = function (channel, client) {
   
 };
 
-InternalServer.prototype.shouldHandle = function (req) {
+WebsocketServer.prototype.shouldHandle = function (req) {
   return this.paths.indexOf(url.parse(req.url).pathname) > -1;
 };
 
-InternalServer.prototype.handleUpgrade = ws.Server.prototype.handleUpgrade;
+WebsocketServer.prototype.handleUpgrade = ws.Server.prototype.handleUpgrade;
 
 
-InternalServer.prototype._pathForChannel = function (subscriber) {
+WebsocketServer.prototype._pathForChannel = function (subscriber) {
   var p = ["", subscriber.collection, "_subscription"].join("/");
   return subscriber.prefix ? subscriber.prefix + p : p;
 };
 
-InternalServer.prototype._getChannel = function (pathname) {
+WebsocketServer.prototype._getChannel = function (pathname) {
   var k, v, s;
   for(k in this.channels) {
     v = this.channels[k];
@@ -103,7 +115,7 @@ InternalServer.prototype._getChannel = function (pathname) {
   }
 };
 
-InternalServer.prototype.register = function (channel) {
+WebsocketServer.prototype.register = function (channel) {
   if(typeof channel === "string") {
     channel = {
       collection: channel,
@@ -124,7 +136,7 @@ InternalServer.prototype.register = function (channel) {
   return this;
 };
 
-InternalServer.prototype.unregister = function(channel) {
+WebsocketServer.prototype.unregister = function(channel) {
   if(typeof channel === "string") {
     channel = {
       collection: channel
@@ -143,7 +155,7 @@ InternalServer.prototype.unregister = function(channel) {
   return this;
 };
 
-InternalServer.prototype.broadcast = function (data) {
+WebsocketServer.prototype.broadcast = function (data) {
   var clients = this.clients[data.collection],
       channel = this.channels[data.collection];
   
@@ -157,7 +169,7 @@ InternalServer.prototype.broadcast = function (data) {
   }
 };
 
-InternalServer.prototype.close = function() {
+WebsocketServer.prototype.close = WebsocketServer.prototype.disconnect = function() {
   debug("close");
   this._server.removeListener("upgrade", this._upgrade);
   var error;
@@ -174,4 +186,4 @@ InternalServer.prototype.close = function() {
   }
 };
 
-module.exports = InternalServer;
+module.exports = WebsocketServer;
