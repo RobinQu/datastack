@@ -41,6 +41,10 @@ NotifierPlugin.prototype.init = function (app) {
   return this;
 };
 
+NotifierPlugin.prototype.expose = function () {
+  return this.notifier;
+};
+
 NotifierPlugin.prototype.notify = function(type, data) {
   debug("notify");
   if(cluster.isWorker && data._source && cluster.worker.id === data._source) {//in worker mode and message originates form itself

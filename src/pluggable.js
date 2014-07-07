@@ -2,9 +2,11 @@ var debug = require("debug")("pluggable");
 
 var Pluggable = function() {
   
-  this.plugins = [];
+  var app = this;
   
-  this.plugin = function (plugin) {
+  app.plugins = [];
+  
+  app.plugin = function (plugin) {
     if(typeof plugin === "string") {
       return this.plugins.find(function(p) {
         return p.name === plugin;
@@ -13,17 +15,29 @@ var Pluggable = function() {
       this.plugins.push(plugin);
       plugin.signal("init", this);
     }
+    
+    //if we should expose something onto the `app` instance
+    if(typeof plugin.expose === "function") {
+      Object.defineProperty(app, plugin.name, {
+        get: function() {
+          return plugin.expose();
+        },
+        enumerable: true,
+        configurable: false
+      });
+    }
+    
     return plugin;
   };
   
-  this.signal = function (signal, data) {
+  app.signal = function (signal, data) {
     var i,len;
     for(i=0,len=this.plugins.length; i<len; i++) {
       this.plugins[i].signal(signal, data);
     }
   };
   
-  this.uninstall = function() {
+  app.uninstall = function() {
     var i,len;
     for(i=0,len=this.plugins.length; i<len; i++) {
       try {
