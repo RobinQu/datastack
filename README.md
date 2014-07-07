@@ -24,7 +24,7 @@ Building your API like a ninja:
     app.listen(porcess.env.PORT || 8888);
 
 
-And you can now have fully operational RESTful API (and more) against two different `collection`.
+And you can now have fully operational RESTful API (and more) against two different `collection`s.
 
 
 ### Document

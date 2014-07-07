@@ -29,7 +29,6 @@ describe("Websocket", function() {
       client = new Websocket("ws://localhost:8888/books/_subscription");
       messageCallback = sinon.spy();
       client.on("message", messageCallback);
-      console.log("!!!!!");
     });
     
     afterEach(function(done) {

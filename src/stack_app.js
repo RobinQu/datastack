@@ -16,14 +16,7 @@ StackApp.prototype.listen = function () {
     this.server = http.createServer(this.callback());
   }
   this.server.listen.apply(this.server, arguments);
-  this.server.on("listening", this.notify.bind(this, "listening", this.server));
-};
-
-StackApp.prototype.notify = function (signal, data) {
-  var i,len;
-  for(i=0,len=this.plugins.length; i<len; i++) {
-    this.plugins[i].signal(signal, data);
-  }
+  this.server.on("listening", this.signal.bind(this, "listening", this.server));
 };
 
 exports = StackApp;

@@ -110,12 +110,7 @@ WebsocketServer.prototype._getChannel = function (pathname) {
 WebsocketServer.prototype.register = function (channel) {
   if(typeof channel === "string") {
     channel = {
-      collection: channel,
-      events: [
-        Constants.events.CREATE,
-        Constants.events.UPDATE,
-        Constants.events.DELETE
-      ]
+      collection: channel
     };
   }
   
@@ -124,6 +119,11 @@ WebsocketServer.prototype.register = function (channel) {
   if(this.paths.indexOf(path) === -1) {
     this.paths.push(path);
   }
+  channel.events = channel.events || [
+    Constants.events.CREATE,
+    Constants.events.UPDATE,
+    Constants.events.DELETE
+  ];
   this.channels[channel.collection] = channel;
   return this;
 };
@@ -150,6 +150,11 @@ WebsocketServer.prototype.unregister = function(channel) {
 WebsocketServer.prototype.broadcast = function (data) {
   var clients = this.clients[data.collection],
       channel = this.channels[data.collection];
+
+  if(!channel) {
+    debug("drop non-interested message %s", data.type);
+    return;
+  }
   
   if(channel.events.indexOf(data.type) > -1) {
     debug("broadcast event '%s' to %d client(s)", data.type, clients.length);
