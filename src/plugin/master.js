@@ -1,7 +1,8 @@
 var Plugin = require("./plugin"),
     debug = require("debug")("plugin:master"),
     util = require("util"),
-    datastack = require("../datastack");
+    datastack = require("../datastack"),
+    Constants = datastack.Constants;
 
 var MasterPlugin = function(options) {
   Plugin.call(this);
@@ -28,6 +29,16 @@ MasterPlugin.prototype.init = function(app) {
   }
   
   app.use(function *(next) {
+    if(!this.accepts("json", "urlencoded", "text", "multipart")) {
+      this.stauts = 422;
+      this.body = {
+        message: "should have correct content-type",
+        status: "error",
+        code: Constants.errors.MISSING_REQUEST_CONTENT_TYPE
+      };
+      return;
+    }
+    
     //report version and vendor
     this.set("x-powered-by", "datastack");
     this.set("x-datastack-version", datastack.version);

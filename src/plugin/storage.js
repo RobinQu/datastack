@@ -1,10 +1,11 @@
 var Plugin = require("./plugin"),
     debug = require("debug")("plugin:storage"),
+    assert = require("assert"),
     util = require("util");
     
 var StoragePlugin = function(options) {
   Plugin.call();
-  options = options || {type: "memory"};
+  assert(options, "should provide a storage or storage options");
   this.name = "storage";
   try {
     this.storage = typeof options.connect === "function" ? options : (function() {

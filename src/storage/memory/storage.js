@@ -96,7 +96,6 @@ Storage.prototype.etag = function (record) {
   return hash.digest("hex");
 };
 
-// TODO: multipe version support
 Storage.prototype.ref = function (record) {
   return record._ref;
 };

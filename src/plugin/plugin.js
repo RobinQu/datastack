@@ -1,5 +1,4 @@
 var EE = require("events").EventEmitter,
-    _ = require("lodash"),
     util = require("util");
 
 var Plugin = function() {
@@ -17,7 +16,7 @@ Plugin.prototype.signal = function (signal, data) {
     this.dispose();
     break;
   default:
-    var methodName = "on" + _.capitalize(signal);
+    var methodName = "on" + signal[0].toUpperCase() + signal.slice(1);
     if(this[methodName]) {
       this[methodName](data);
     }
