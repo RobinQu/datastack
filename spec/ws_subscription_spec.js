@@ -16,7 +16,9 @@ describe("Websocket", function() {
     
     var app = koa(), srv, notifier;
 
-    datastack(app);
+    datastack(app, {
+      storage: {type:"memory"}
+    });
     app.use(datastack.resource("book").middleware());
     
     var client, messageCallback;
@@ -163,7 +165,9 @@ describe("Websocket", function() {
     
     var app = koa(), srv, notifier;
 
-    datastack(app);
+    datastack(app,{
+      storage: {type:"memory"}
+    });
     app.use(datastack.resource("book").middleware());
     
     it("should stop publish after closed", function(done) {
