@@ -1,23 +1,23 @@
-### API
+# API
 
 The APIs that are avaiable out-of-box:
 
-#### Collection
+## Collection
 
 * List a collection: `GET /:collection`
 
-#### Document
+## Document
 
 * Get a document: `GET /:collection/:id`
 * Create or update a document: `PUT /:collection/:id`
 * Create one or more documents: `POST /:collection`
 
-#### Version
+## Version
 
 * List all versions for a document: `/:collection/:id/_refs`
 * Get a version: `/:collection/:id/_refs/:ref`
 
-#### Event
+## Event
 
 There are some simple events emitted on data operations
 

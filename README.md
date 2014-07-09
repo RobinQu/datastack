@@ -32,8 +32,9 @@ And you can now have fully operational RESTful API (and more) against two differ
 Fundalmentally `datastack` is a web middleware that is powered by `koa` and its friends. It targets to help you to quickly build up your RESTful API with minimun code. To understand what `datastack` really is, please read on the following topics:
 
 * [Data model and data storage](/doc/data_model_and_storage.md)
-* [API exposed by built-in components](/doc/built_in_api.md)
-* [Design patterns with `datastack`](/doc/patterns.md)
+* [API exposed by built-in components](/doc/builtin_api.md)
+* [Design patterns](/doc/patterns.md)
+* [Plugin system](/doc/plugin.md)
 * [Working with cluster](/doc/cluster.md)
 
 ## Roadmap
