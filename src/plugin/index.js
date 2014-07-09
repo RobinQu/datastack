@@ -4,6 +4,8 @@ module.exports = {
   
   Notifier: require("./notifier"),
   
-  Storage: require("./storage")
+  Storage: require("./storage"),
+  
+  Cluster: require("./cluster")
   
 };

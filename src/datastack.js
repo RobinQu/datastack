@@ -3,10 +3,10 @@ var datastack = module.exports = require("./stackable");
 
 require("pkginfo")(module, "version");
 
-datastack.resource = require("./stack_resource");
+datastack.Constants = require("./constants");
 
-datastack.notifier = require("./notifier");
+datastack.resource = require("./stack_resource");
 
 datastack.app = require("./stack_app");
 
-datastack.Constants = require("./constants");
+datastack.cluster = require("./stack_cluster");

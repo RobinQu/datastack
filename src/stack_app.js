@@ -25,6 +25,7 @@ var StackApp = function(server, options) {
 util.inherits(StackApp, koa);
 
 StackApp.prototype.listen = function () {
+  debug("listen");
   if(this.server) {
     this.server.on("request", this.callback());
   } else {

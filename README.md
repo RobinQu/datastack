@@ -4,9 +4,9 @@
 
 Human-friendly RESTful middlewares for koa
 
-## Concept
+## TL;DR
 
-Building your API like a ninja:
+Building your API like a pro:
 
 
     var datastack = require("datastack"),
@@ -27,86 +27,14 @@ Building your API like a ninja:
 And you can now have fully operational RESTful API (and more) against two different `collection`s.
 
 
-### Document
+## Philosophy
 
-* The minimal abstraction of data fields
-* schema-free documents in nature
-* A document can have multiple versions
-* Versioning support may vary according to storage solution you specify.
+Fundalmentally `datastack` is a web middleware that is powered by `koa` and its friends. It targets to help you to quickly build up your RESTful API with minimun code. To understand what `datastack` really is, please read on the following topics:
 
-
-#### ID
-
-* ID in `datastack` is not neccssarily unique and mandatory
-* Key name for a ID can be configured accroding to the implementation of storage solution
-
-### Collection
-
-* A subset of documents in your database, commonly grouped by their logical category.
-* It shares some ideas with some popular databases:
-  * `table` in mysql
-  * `collection` in mongodb
-  * `view` in CouchDB
-
-### Subscription
-
-* A collection can emit different events to report data changes
-* Data changes can be further populated by many means
-  * Websocket
-  * Apple Push Notification
-  * Mail
-
-### API
-
-The APIs that are avaiable out-of-box:
-
-#### Collection
-
-* List a collection: `GET /:collection`
-
-#### Document
-
-* Get a document: `GET /:collection/:id`
-* Create or update a document: `PUT /:collection/:id`
-* Create one or more documents: `POST /:collection`
-
-#### Version
-
-* List all versions for a document: `/:collection/:id/_refs`
-* Get a version: `/:collection/:id/_refs/:ref`
-
-#### Event
-
-There are some simple events emitted on data operations
-
-`CREATE` Event:
-
-* `collection`: collection name
-* `data`: an array of `id`s of created records
-
-`UPDATE` Event:
-
-* `collection`: collection name
-* `data.from`: `ref` of last version
-* `data.to`: `ref` of current version
-
-`DELETE` Event:
-
-* `collection`: collection name
-* `data.ref`: `ref` that is deleted, `*` means this deletion involes all refs
-* `data.id`: `id` of the record that is deleted
-
-#### Subscription
-
-We have `websocket-notifier` built-in.
-
-* Endpoint: `/:collection/:id/_subscription`
-* Message contains the stringified version of `events` mentioned above
-
-There will be many more notifiers:
-
-* APN
-* Mails
+* [Data model and data storage](/doc/data_model_and_storage.md)
+* [API exposed by built-in components](/doc/built_in_api.md)
+* [Design patterns with `datastack`](/doc/patterns.md)
+* [Working with cluster](/doc/cluster.md)
 
 ## Roadmap
 
