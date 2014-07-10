@@ -11,19 +11,26 @@ util.inherits(Cluster, Plugin);
 
 Cluster.prototype.init = function (app) {
   debug("init as master? %s", cluster.isMaster);
+  
   process.on("message", function(m) {
     debug("receive message from master: %s", m.cmd);
     if(m.cmd === "disconnect") {
       console.warn("Requested to shutdown, process pid %s", process.pid);
       app.dispose();
     } else if(m.cmd === "sync" && m.data && m.data.type && m.data.source !== cluster.worker.id) {//transmit message from other worker
-      debug("sync message received");
+      debug("sync message received; emit: %s", m.data.type);
       app.emit(m.data.type, m.data);
     }
   });
   
-  app.on("sync", this.sync.bind(this));
-  app.sync = this.sync.bind(this);
+  var self = this;
+  app.sync = function(event, data) {
+    // tell internal consumers
+    app.emit(event, data);
+    // tell other workers
+    data.type = event;
+    self.sync(data);
+  };
 };
 
 Cluster.prototype.onListening = function () {
@@ -34,7 +41,7 @@ Cluster.prototype.onListening = function () {
 
 Cluster.prototype.sync = function (data) {
   if(cluster.isWorker) {
-    debug("sync request %s", data);
+    debug("sync request %o", data);
     process.send({
       cmd: "sync",
       source: cluster.worker.id,

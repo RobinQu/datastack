@@ -1,6 +1,5 @@
-var datastack = require("../..");
-var argv = require("optimist").argv;
-var _ = require("lodash");
+var datastack = require("../.."),
+    argv = require("optimist").argv;
 
 
 process.on("uncaughtException", function(e) {
@@ -18,16 +17,10 @@ app.resource("book");
 
 app.resource("author");
 
-app.listen(8888, function() {
-  switch(argv.action) {
-  case "sync1":
-    var t = parseInt(argv.times, 10);
-    _.times(t, function() {
-      app.sync(require("cluster").worker.id);
-    });
-    break;
-  }
-  
+var port = argv.port || 8888;
+
+app.listen(port, function() {
+  console.log("server is up and running at %s in cluste %s", port, argv.name);
 });
 
 

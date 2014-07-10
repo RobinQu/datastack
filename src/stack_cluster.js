@@ -13,16 +13,19 @@ var proto = {
   broadcast: function(message, options) {
     options = options || {};
     var i,len, excludes = options.excludes || [], candidates;
-    debug("broadcast, exlucded workers: %o", options.excludes);
     candidates = this.workers.filter(function(w) {
-      return excludes.indexOf(w.id) > -1;
+      return excludes.indexOf(w.id) === -1;
     });
+    debug("broadcast to %s workers; exlucded worker id: %o ", candidates.length, excludes);
     //send to workers in the same cluster
     for(i=0,len=candidates.length; i<len; i++) {
       candidates[i].send(message);
     }
-    //send to other clusters
-    this.hub.publish("sync", message);
+    if(options.propagation) {
+      debug("sync to other clusters");
+      //send to other clusters
+      this.hub.publish("sync", message);
+    }
   }
 };
 
@@ -61,14 +64,13 @@ var StackCluster = function(path, options, callback) {
   
   cluster.on("message", function(worker, msg) {
     debug("message from worker %s, pid %s", worker.id, worker.process.pid);
-    if(msg.cmd === "sync" && typeof msg.source !== "undefined") {//sync message to other workers
+    if(msg.cmd === "sync" && typeof msg.source !== "undefined") {//sync message to other workers in the same cluster
       cluster.broadcast(msg, {
-        excludes: [msg.source]
+        excludes: [msg.source],
+        propagation: true
       });
     }
   });
-  
-  
   
   var run = cluster.run.bind(run);
 
@@ -77,6 +79,7 @@ var StackCluster = function(path, options, callback) {
       // create a message hub
       cluster.hub = voka.hub({
         redis: options.redis
+        // namespace: ["datastack", cluster.name]
       }, function(e) {
         if(e) {
           debug(e);
@@ -86,6 +89,7 @@ var StackCluster = function(path, options, callback) {
         }
         // hook up with sync events
         cluster.hub.subscribe("sync", function(msg) {//sync messages from other clusters
+          debug("receieved sync message from other cluster");
           cluster.broadcast(msg);
         });
         

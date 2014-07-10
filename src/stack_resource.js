@@ -77,7 +77,7 @@ module.exports = function createResource(name, options) {
       this.body = result;
     }
     
-    this.app.emit(Constants.events.CREATE, {
+    this.app.sync(Constants.events.CREATE, {
       collection: pluralizedName,
       data: _.map(result, this.storage.idKey)
     });
@@ -88,7 +88,7 @@ module.exports = function createResource(name, options) {
     debug("delete");
     var collection = yield this.collection(this.params[0]);
     yield collection.removeOne(this.params[1]);
-    this.app.emit("datastack:delete", {
+    this.app.sync("datastack:delete", {
       collection: pluralizedName,
       data: {
         id: this.params[1],
@@ -129,7 +129,7 @@ module.exports = function createResource(name, options) {
       this.identify(newRecord);
       this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, this.storage.ref(newRecord)));
       
-      this.app.emit(Constants.events.UPDATE, {
+      this.app.sync(Constants.events.UPDATE, {
         collection: pluralizedName,
         data: {
           id: id,
@@ -147,7 +147,7 @@ module.exports = function createResource(name, options) {
       this.identify(result[0]);
       this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, result[0][this.storage.refKey]));
       
-      this.app.emit(Constants.events.CREATE, {
+      this.app.sync(Constants.events.CREATE, {
         collection: pluralizedName,
         data: _.map(result, this.storage.idKey)
       });
@@ -178,7 +178,7 @@ module.exports = function createResource(name, options) {
     debug("del %s, %s", this.params.id, this.params.ref);
     var collection = yield this.collection(pluralizedName);
     yield collection.removeOne(this.params.id, this.params.ref);
-    this.app.emit(Constants.events.DELETE, {
+    this.app.sync(Constants.events.DELETE, {
       collection: pluralizedName,
       data: {
         id: this.params.id,
@@ -187,6 +187,8 @@ module.exports = function createResource(name, options) {
     });
     this.status = 204;
   });
+  
+  router.collection = pluralizedName;
   
   return router;
 };

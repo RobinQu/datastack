@@ -1,5 +1,5 @@
 var Plugin = require("./plugin"),
-    debug = require("debug")("plugin:storage"),
+    debug = require("debug")("plugin:notifier"),
     Constants = require("../constants"),
     util = require("util");
 
@@ -29,14 +29,10 @@ NotifierPlugin.prototype.init = function (app) {
   
   //bind all events
   var events = [Constants.events.CREATE, Constants.events.UPDATE, Constants.events.DELETE],
-      i, len,
-      sync = function(data) {
-        app.sync(data);
-      };
+      i, len;
   
   for(i=0,len=events.length; i<len; i++) {
     app.on(events[i], this.notify.bind(this, events[i]));
-    app.on(events[i], sync);
   }
   
   return this;

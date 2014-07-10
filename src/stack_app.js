@@ -33,6 +33,7 @@ StackApp.prototype.listen = function () {
   }
   this.server.listen.apply(this.server, arguments);
   this.server.on("listening", this.signal.bind(this, "listening", this.server));
+  this.notifier.hook(this.server);
   return this.server;
 };
 
@@ -53,6 +54,8 @@ StackApp.prototype.resource = function (name, options) {
   } else {
     this.use(resource.middleware());
   }
+  console.log(resource.collection);
+  this.notifier.register(resource.collection);
   return resource;
 };
 

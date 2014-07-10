@@ -70,6 +70,7 @@ WebsocketServer.prototype.upgrade = function(req, socket, upgradeHead) {
 };
 
 WebsocketServer.prototype._trackClient = function (channel, client) {
+  debug("track client");
   var list = this.clients[channel.collection];
   if(!list) {
     list = this.clients[channel.collection] = [];
@@ -115,6 +116,7 @@ WebsocketServer.prototype.register = function (channel) {
   }
   
   assert(channel.collection, "should give collection name");
+  debug("register %s", channel.collection);
   var path = this._pathForChannel(channel);
   if(this.paths.indexOf(path) === -1) {
     this.paths.push(path);
