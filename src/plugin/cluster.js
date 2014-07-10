@@ -28,6 +28,7 @@ Cluster.prototype.init = function (app) {
     // tell internal consumers
     app.emit(event, data);
     // tell other workers
+    data = data || {};
     data.type = event;
     self.sync(data);
   };

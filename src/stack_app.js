@@ -54,7 +54,6 @@ StackApp.prototype.resource = function (name, options) {
   } else {
     this.use(resource.middleware());
   }
-  console.log(resource.collection);
   this.notifier.register(resource.collection);
   return resource;
 };

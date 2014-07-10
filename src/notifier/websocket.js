@@ -158,6 +158,10 @@ WebsocketServer.prototype.broadcast = function (data) {
     debug("drop non-interested message %s", data.type);
     return;
   }
+  if(!clients) {
+    debug("no clients for %s", data.type);
+    return;
+  }
   
   if(channel.events.indexOf(data.type) > -1) {
     debug("broadcast event '%s' to %d client(s)", data.type, clients.length);
