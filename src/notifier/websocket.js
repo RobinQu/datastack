@@ -108,13 +108,14 @@ WebsocketServer.prototype._getChannel = function (pathname) {
   }
 };
 
+
+//TODO: support url prefix
 WebsocketServer.prototype.register = function (channel) {
   if(typeof channel === "string") {
     channel = {
       collection: channel
     };
   }
-  
   assert(channel.collection, "should give collection name");
   debug("register %s", channel.collection);
   var path = this._pathForChannel(channel);
@@ -155,7 +156,7 @@ WebsocketServer.prototype.broadcast = function (data) {
       self = this;
 
   if(!channel) {
-    debug("drop non-interested message %s", data.type);
+    debug("channel not registered for type %s, collection", data.type, data.collection);
     return;
   }
   if(!clients) {
