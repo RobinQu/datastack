@@ -48,6 +48,10 @@ var Pluggable = function() {
     }
   };
   
+  app.pluginMiddleware = function(name) {
+    return this.plugins(name).middleware(app);
+  };
+  
 };
 
 
