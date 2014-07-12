@@ -46,15 +46,14 @@ StackApp.prototype.dispose = function () {
   } catch(e) {}
 };
 
-StackApp.prototype.resource = function (name, options) {
-  options = options || {};
-  var resource = require("./stack_resource")(name, options);
+StackApp.prototype.resource = function (options) {
+  var resource = require("./stack_resource")(options);
   if(options.prefix) {
     this.use(mount(options.prefix, resource.middleware()));
   } else {
     this.use(resource.middleware());
   }
-  this.notifier.register(resource.collection);
+  this.notifier.register(resource.name);
   return resource;
 };
 

@@ -22,7 +22,7 @@ describe("Mongo storage", function() {
       uri: "mongodb://127.0.0.1:27017/datastack-test"
     }
   });
-  app.use(datastack.resource("book").middleware());
+  app.use(datastack.resource("books").middleware());
   // before(function(done) {
   //   var start = app.listen.bind(app, PORT, done);
   //   if(app.listening) {

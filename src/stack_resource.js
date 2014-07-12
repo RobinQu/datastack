@@ -1,109 +1,229 @@
 var Router = require("koa-router"),
     middlewares = require("./middleware"),
     lingo = require("lingo"),
+    assert = require("assert"),
     _ = require("lodash"),
     util = require("util"),
     Constants = require("./constants");
 
+var RefResource = function(resource) {
+  this.debug = resource.debug;
+  this.collection = resource.name;
+  this.id = resource.id.bind(resource);
+  this.parentPattern = resource.pattern("get")[1];
+};
 
-module.exports = function createResource(name, options) {
-  
-  options = options || {};
-  
-  var router = new Router();
-  
-  var debug = require("debug")("resource:" + name);
-  
-  var pluralizedName = lingo.en.pluralize(name);
-  
-  // make up some regex like:
-  // /^\/([^\/]+)\/?$/
-  var pattern1 = new RegExp(["^\\/(", pluralizedName, ")\\/?$"].join(""));
-  // /^\/([^\/]+)\/([^\/])+(\/?)$/
-  var pattern2 = new RegExp(["^\\/(", pluralizedName, ")\\/([^\\/]+)\\/?$"].join(""));
-  
-  router.get(pattern1, middlewares.pagination(options.pagination), middlewares.query(), function*() {
-    debug("index");
+RefResource.prototype.index = function() {
+  var self = this;
+  return function*() {
+    self.debug("versions");
+    var collection = yield this.collection(self.collection);
+    this.body = yield collection.versions(self.id(this));
+  };
+};
 
-    var collection = yield this.collection(this.params[0]);
+RefResource.prototype.get = function() {
+  var self = this;
+  return function*() {
+    var id = self.id(this);
+    self.debug("get %s, %s", id, this.params.ref);
+    var collection = yield this.collection(self.collection);
+    var one = yield collection.findOne(id, this.params.ref);
+
+    if(one) {
+      this.identify(one);
+      this.body = one;
+    }
+  };
+};
+
+RefResource.prototype.del = function() {
+  var self = this;
+  return function*() {
+    var id = self.id(this);
+    self.debug("del %s, %s", id, this.params.ref);
+    var collection = yield this.collection(self.collection);
+    yield collection.removeOne(id, this.params.ref);
+    this.app.sync(Constants.events.DELETE, {
+      collection: self.collection,
+      data: {
+        id: this.params.id,
+        ref: this.params.ref
+      }
+    });
+    this.status = 204;
+  };
+};
+
+RefResource.prototype.pattern = function(action) {
+  switch(action) {
+  case "index":
+    return ["get", util.format("%s/_refs", this.parentPattern)];
+  case "get":
+  case "del":
+    return [action, util.format("%s/_refs/:ref", this.parentPattern)];
+  }
+};
+
+var StackResource = function(options) {
+  if(!(this instanceof StackResource)) {
+    return new StackResource(options);
+  }
+  if(typeof options === "string") {
+    options = {name: options};
+  }
+  assert(options.name, "should provide collection name");
+  this.name = options.name;
+  this.debug = require("debug")("resource:" + this.name);
+  this.pagination = options.pagination;
+  this.idKey = lingo.en.singularize(this.name) + "_id";
+  this.router = new Router();
+  //setup routes
+  this.route();
+};
+
+StackResource.prototype.middleware = function() {
+  return this.router.middleware();
+};
+
+StackResource.prototype.pattern = function(action) {
+  switch(action) {
+  case "index":
+    return ["get", util.format("/%s", this.name)];
+  case "post":
+    return [action, util.format("/%s", this.name)];
+  case "get":
+  case "del":
+  case "put":
+  case "head":
+    return [action, util.format("/%s/:%s", this.name, this.idKey)];
+  }
+};
+
+StackResource.prototype.route = function() {
+  var refResource = new RefResource(this),
+      add,
+      self = this;
+  add = function(action, target) {
+    target = target || self;
+    var pattern = target.pattern(action), args;
+    args = pattern.concat(target[action]());
+    self.router[pattern[0]].apply(self.router, args);
+  };
+  
+  //add CRUD middleware
+  ["index", "get", "post", "put", "del"].forEach(function(action) {
+    add(action);
+  });
+  //add ref middleware
+  ["del", "get", "index"].forEach(function(action) {
+    add(action, refResource);
+  });
+};
+
+StackResource.prototype.id = function(context) {
+  return context.params[this.idKey];
+};
+
+StackResource.prototype.index = function() {
+  var self = this, mw;
+  
+  mw = function*() {
+    self.debug("index");
+
+    var collection = yield this.collection(self.name);
     // console.log(this.pagination);
-    debug("criteria %o, projection %o, sort %o, pagination %o", this.criteria, this.projection, this.sort, this.pagination);
+    self.debug("criteria %o, projection %o, sort %o, pagination %o", this.criteria, this.projection, this.sort, this.pagination);
     var cursor = yield collection.find(this.criteria, this.projection);
     this.body = yield cursor.sort(this.sort)
               .skip(this.pagination.skip)
               .limit(this.pagination.limit)
               .toArray();
-  });
+  };
   
-  router.get(pattern2, function*() {
-    debug("show");
+  return [middlewares.pagination(this.pagination),  middlewares.query(), mw];
+};
+
+StackResource.prototype.get = function () {
+  var self = this;
+  return function*() {
+    self.debug("show");
     
-    var collection = yield this.collection(this.params[0]);
-    var doc = yield collection.findOne(this.params[1]);
+    var collection = yield this.collection(self.name);
+    var doc = yield collection.findOne(self.id(this));
     if(!doc) {
       this.status = 404;
     } else {
       this.identify(doc);
       this.body = doc;
     }
-  });
-  
-  router.post(pattern1, function*() {
-    debug("create");
-    var data, collection;
+  };
+};
 
-    collection = yield this.collection(this.params[0]);
-    data = this.request.body;
+StackResource.prototype.post = function() {
+  var self = this;
+  return function*() {
+      self.debug("create");
+      var data, collection;
+
+      collection = yield this.collection(self.name);
+      data = this.request.body;
     
-    if(!data) {
-      this.status = 400;
-      this.body = {
-        message: "should have usable data",
-        status: "error",
-        code: Constants.errors.BAD_REQUEST
-      };
-      return;
-    }
+      if(!data) {
+        this.status = 400;
+        this.body = {
+          message: "should have usable data",
+          status: "error",
+          code: Constants.errors.BAD_REQUEST
+        };
+        return;
+      }
     
-    var result = yield collection.insert(data);
-    //write resource location for single record creation
-    if(!util.isArray(data) && result.length && result[0][this.storage.idKey]) {
-      this.identify(result[0]);
-      this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, result[0][this.storage.idKey], result[0][this.storage.refKey]));
-      this.body = result[0];
-    } else {//mark as batch save
-      debug("batch save %s", result.length);
-      this.set("x-batch-save", result.length);
-      this.body = result;
-    }
+      var result = yield collection.insert(data);
+      //write resource location for single record creation
+      if(!util.isArray(data) && result.length && result[0][this.storage.idKey]) {
+        this.identify(result[0]);
+        this.set("Location", util.format("/%s/%s/_refs/%s", self.name, result[0][this.storage.idKey], result[0][this.storage.refKey]));
+        this.body = result[0];
+      } else {//mark as batch save
+        self.debug("batch save %s", result.length);
+        this.set("x-batch-save", result.length);
+        this.body = result;
+      }
     
-    this.app.sync(Constants.events.CREATE, {
-      collection: pluralizedName,
-      data: _.map(result, this.storage.idKey)
-    });
-    this.status = 201;
-  });
-  
-  router.del(pattern2, function*() {
-    debug("delete");
-    var collection = yield this.collection(this.params[0]);
-    yield collection.removeOne(this.params[1]);
+      this.app.sync(Constants.events.CREATE, {
+        collection: self.name,
+        data: _.map(result, this.storage.idKey)
+      });
+      this.status = 201;
+    };
+};
+
+StackResource.prototype.del = function() {
+  var self = this;
+  return function*() {
+    self.debug("delete");
+    var collection = yield this.collection(self.name);
+    yield collection.removeOne(self.id(this));
     this.app.sync("datastack:delete", {
-      collection: pluralizedName,
+      collection: self.name,
       data: {
-        id: this.params[1],
+        id: self.id(this),
         ref: "*"
       }
     });
     this.status = 204;
-    
-  });
   
-  router.put(pattern2, function*() {
-    debug("put");
+  };
+};
+
+StackResource.prototype.put = function() {
+  var self = this;
+  return function*() {
+    self.debug("put");
     var collection, id, record, newRecord, data, result;
-    id = this.params[1];
-    collection = yield this.collection(this.params[0]);
+    id = self.id(this);
+    collection = yield this.collection(self.name);
     data = this.request.body;
     if(!data) {
       this.status = 400;
@@ -117,20 +237,20 @@ module.exports = function createResource(name, options) {
     record = yield collection.findOne(id);
 
     if(record && this.storage.etag(record) === this.get("if-match")) {//update
-      debug("update");
+      self.debug("update");
       yield collection.updateById(id, data);
       this.status = 200;
       //TODO: save this query
       
       newRecord = yield collection.findOne(id);
       
-      debug("from %s to %s", this.storage.ref(record), this.storage.ref(newRecord));
+      self.debug("from %s to %s", this.storage.ref(record), this.storage.ref(newRecord));
       
       this.identify(newRecord);
-      this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, this.storage.ref(newRecord)));
+      this.set("Location", util.format("/%s/%s/_refs/%s", self.name, id, this.storage.ref(newRecord)));
       
       this.app.sync(Constants.events.UPDATE, {
-        collection: pluralizedName,
+        collection: self.name,
         data: {
           id: id,
           from: this.storage.ref(record),
@@ -140,55 +260,22 @@ module.exports = function createResource(name, options) {
       return;
     }
     if(!record || this.get("if-none-match")) {//create
-      debug("create");
+      self.debug("create");
       data[this.storage.idKey] = id;
       result = yield collection.insert(data);
       this.status = 201;
       this.identify(result[0]);
-      this.set("Location", util.format("/%s/%s/_refs/%s", pluralizedName, id, result[0][this.storage.refKey]));
+      this.set("Location", util.format("/%s/%s/_refs/%s", self.name, id, result[0][this.storage.refKey]));
       
       this.app.sync(Constants.events.CREATE, {
-        collection: pluralizedName,
+        collection: self.name,
         data: _.map(result, this.storage.idKey)
       });
       return;
     }
-    debug("conflict, expect %s to equal %s", this.storage.etag(record), this.get("if-match"));
+    self.debug("conflict, expect %s to equal %s", this.storage.etag(record), this.get("if-match"));
     this.status = 409;
-  });
-  
-  router.get("/" + pluralizedName + "/:id/_refs", function*() {
-    debug("versions");
-    var collection = yield this.collection(pluralizedName);
-    this.body = yield collection.versions(this.params.id);
-  });
-  
-  router.get("/" + pluralizedName + "/:id/_refs/:ref", function*() {
-    debug("get %s, %s", this.params.id, this.params.ref);
-    var collection = yield this.collection(pluralizedName);
-    var one = yield collection.findOne(this.params.id, this.params.ref);
-    
-    if(one) {
-      this.identify(one);
-      this.body = one;
-    }
-  });
-  
-  router.del("/" + pluralizedName + "/:id/_refs/:ref", function*() {
-    debug("del %s, %s", this.params.id, this.params.ref);
-    var collection = yield this.collection(pluralizedName);
-    yield collection.removeOne(this.params.id, this.params.ref);
-    this.app.sync(Constants.events.DELETE, {
-      collection: pluralizedName,
-      data: {
-        id: this.params.id,
-        ref: this.params.ref
-      }
-    });
-    this.status = 204;
-  });
-  
-  router.collection = pluralizedName;
-  
-  return router;
+  };
 };
+
+module.exports = StackResource;

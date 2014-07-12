@@ -18,7 +18,7 @@ describe("Memory store", function() {
       store: store
     }
   });
-  app.use(datastack.resource("book").middleware());
+  app.use(datastack.resource("books").middleware());
   
   it("should work with simple hash", function(done) {
     

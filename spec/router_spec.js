@@ -41,7 +41,7 @@ describe("Router", function() {
   describe("Construction", function() {
     it("should create with resource name and used as middleware alone", function(done) {
     
-      var resource = new datastack.resource("book");
+      var resource = new datastack.resource("books");
       var app = require("koa")();
       app.use(function*() {
         this.body = this.req.url;
@@ -60,7 +60,7 @@ describe("Router", function() {
   });
   
   
-  var resource = new datastack.resource("book");
+  var resource = new datastack.resource("books");
   var app = require("koa")(),
       collection, srv;
   //intercept incoming requests

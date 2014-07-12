@@ -13,9 +13,9 @@ var app = datastack.app({
   }
 });
 
-app.resource("book");
+app.resource("books");
 
-app.resource("author");
+app.resource("authors");
 
 app.listen(8888, function() {
   _.times(2, function() {

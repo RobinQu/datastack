@@ -13,7 +13,7 @@ describe("Encryption", function() {
   datastack(app, {
     storage: {type: "memory"}
   });
-  app.use(datastack.resource("book").middleware());
+  app.use(datastack.resource("books").middleware());
   server = testkit.web.createHttpServer(true, app.callback());
   
   
