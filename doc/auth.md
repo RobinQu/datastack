@@ -1,4 +1,4 @@
-# Authentication and Permission control 
+# Authentication
 
 HTTP Basic Auth is used in `datastack`:
 

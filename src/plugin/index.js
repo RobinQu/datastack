@@ -6,6 +6,8 @@ module.exports = {
   
   Storage: require("./storage"),
   
-  Cluster: require("./cluster")
+  Cluster: require("./cluster"),
+  
+  Auth: require("./auth")
   
 };

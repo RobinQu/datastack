@@ -28,7 +28,7 @@ RefResource.prototype.get = function() {
     var id = self.id(this);
     self.debug("get %s, %s", id, this.params.ref);
     var collection = yield this.collection(self.collection);
-    var one = yield collection.findOne(id, this.params.ref);
+    var one = yield collection.findById(id, this.params.ref);
 
     if(one) {
       this.identify(one);
@@ -78,6 +78,7 @@ var StackResource = function(options) {
   this.pagination = options.pagination;
   this.idKey = lingo.en.singularize(this.name) + "_id";
   this.router = new Router();
+  this.prior = options.prior || null;
   //setup routes
   this.route();
 };
@@ -107,7 +108,15 @@ StackResource.prototype.route = function() {
   add = function(action, target) {
     target = target || self;
     var pattern = target.pattern(action), args;
+    //insert the prior middleware
+    if(self.prior) {
+      if(self.prior === "function") {
+        pattern.push(self.prior.consturcotr.name === "GeneratorFunction" ? self.prior : self.prior(self.name, action));
+      }
+    }
+    //insert action middleware
     args = pattern.concat(target[action]());
+    //register route
     self.router[pattern[0]].apply(self.router, args);
   };
   
@@ -150,7 +159,7 @@ StackResource.prototype.get = function () {
     self.debug("show");
     
     var collection = yield this.collection(self.name);
-    var doc = yield collection.findOne(self.id(this));
+    var doc = yield collection.findById(self.id(this));
     if(!doc) {
       this.status = 404;
     } else {
@@ -213,7 +222,6 @@ StackResource.prototype.del = function() {
       }
     });
     this.status = 204;
-  
   };
 };
 
@@ -234,7 +242,7 @@ StackResource.prototype.put = function() {
       };
       return;
     }
-    record = yield collection.findOne(id);
+    record = yield collection.findById(id);
 
     if(record && this.storage.etag(record) === this.get("if-match")) {//update
       self.debug("update");
@@ -242,7 +250,7 @@ StackResource.prototype.put = function() {
       this.status = 200;
       //TODO: save this query
       
-      newRecord = yield collection.findOne(id);
+      newRecord = yield collection.findById(id);
       
       self.debug("from %s to %s", this.storage.ref(record), this.storage.ref(newRecord));
       

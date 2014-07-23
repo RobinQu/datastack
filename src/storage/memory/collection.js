@@ -11,7 +11,7 @@ var Collection = function(name) {
 };
 
 // find record by record id
-Collection.prototype.findOne = function (id, ref) {
+Collection.prototype.findById = function (id, ref) {
   var self = this;
   return function*() {
     var query = {id: id};
@@ -27,6 +27,18 @@ Collection.prototype.findOne = function (id, ref) {
   };
 };
 
+Collection.prototype.findOne = function(condition, projection) {
+  var ret = _.where(this.data, condition);
+  return function*() {
+    if(ret && projection.length) {
+      return projection.reduce(function(prev, cur) {
+        prev[cur] = ret[cur];
+        return prev;
+      }, {});
+    }
+    return ret;
+  };
+};
 
 // find by query, and projection
 // should return a `Cursor` object

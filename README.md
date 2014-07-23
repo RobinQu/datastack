@@ -36,6 +36,7 @@ Fundalmentally `datastack` is a web middleware that is powered by `koa` and its 
 * [Design patterns](/doc/patterns.md)
 * [Plugin system](/doc/plugin.md)
 * [Working with cluster](/doc/cluster.md)
+* [Authentication](/doc/auth.md)
 
 ## Roadmap
 

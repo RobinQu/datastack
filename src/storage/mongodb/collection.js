@@ -14,13 +14,18 @@ CollectionAdapter.prototype.find = function(query, projections) {
   };
 };
 
-CollectionAdapter.prototype.findOne = function(id, ref) {
+CollectionAdapter.prototype.findById = function(id, ref) {
   var self = this;
   return function*() {
     var query = this.storage.buildSimpleQuery(id, ref);
     debug("find one by %o", query);
-    return yield self._col.findOne(query);
+    return yield self._col.findById(query);
   };
+};
+
+CollectionAdapter.prototype.findOne = function(query, projections) {
+  query[this.storage.archivedKey] = false;
+  return this._col.findOne(query, projections);
 };
 
 
