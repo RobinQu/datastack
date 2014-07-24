@@ -28,7 +28,6 @@ CollectionAdapter.prototype.findOne = function(query, projections) {
   return this._col.findOne(query, projections);
 };
 
-
 CollectionAdapter.prototype.updateById = function (id, update) {
   var self = this;
   

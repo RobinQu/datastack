@@ -5,6 +5,7 @@ var Plugin = require("./plugin"),
 
 var Cluster = function() {
   Plugin.call(this);
+  this.name = "cluster";
 };
 
 util.inherits(Cluster, Plugin);

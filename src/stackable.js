@@ -6,6 +6,6 @@ module.exports = function(app, options) {
   app.plugin(new plugins.Storage(options.storage));
   app.plugin(new plugins.Notifier(options.notifier));
   app.plugin(new plugins.Cluster());
-  app.plugin(new plugins.Auth());
+  app.plugin(new plugins.Auth(options.authenticator));
   return app;
 };

@@ -122,8 +122,11 @@ StackResource.prototype.route = function() {
     }
     if(self.auth) {
       //insert auth middleware
-      pattern.push(this.authenticator.middleware(self.name, action));
+      pattern.push(function*auth() {
+        yield this.app.authenticator.auth(self.name, action);
+      });
     }
+    // self.debug("additional middlewares %s for %s, %s", pattern.length, self.name, action);
     //insert action middleware
     args = pattern.concat(target[action]());
     //register route
