@@ -78,10 +78,14 @@ var StackResource = function(options) {
   this.pagination = options.pagination;
   this.idKey = lingo.en.singularize(this.name) + "_id";
   this.router = new Router();
-  this.prior = options.prior || null;
+  this.auth = options.auth || false;
+  //prior middlewares
+  this.prior = options.prior || [];
   //setup routes
   this.route();
+  
 };
+
 
 StackResource.prototype.middleware = function() {
   return this.router.middleware();
@@ -112,7 +116,13 @@ StackResource.prototype.route = function() {
     if(self.prior) {
       if(self.prior === "function") {
         pattern.push(self.prior.consturcotr.name === "GeneratorFunction" ? self.prior : self.prior(self.name, action));
+      } else if(util.isArray(self.prior)) {
+        pattern = pattern.concat(self.prior);
       }
+    }
+    if(self.auth) {
+      //insert auth middleware
+      pattern.push(this.authenticator.middleware(self.name, action));
     }
     //insert action middleware
     args = pattern.concat(target[action]());

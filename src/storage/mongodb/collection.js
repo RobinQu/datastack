@@ -19,7 +19,7 @@ CollectionAdapter.prototype.findById = function(id, ref) {
   return function*() {
     var query = this.storage.buildSimpleQuery(id, ref);
     debug("find one by %o", query);
-    return yield self._col.findById(query);
+    return yield self._col.findOne(query);
   };
 };
 
