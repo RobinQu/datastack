@@ -35,35 +35,33 @@ AuthPlugin.BasicTokenAuthenticate = function (collectionName, action) {
   //scope is named as "{collectionName}:{actionName}"
   var requiredScope = util.format("%s:%s", collectionName, action);
   return function*(next) {
-    debug("basick token auth");
-    var info = auth(this), token, collection, user, hash;
-    if(info && info.user && info.pass) {
+    debug("basick token auth '%s'", this.get("authorization"));
+    var info = auth(this), token, collection, user;
+    if(info && info.name && info.pass) {
       //auth by user name and password
       collection = yield this.storage.collection("_users");
-      user = yield collection.findOne({"name": info.user});
-      hash = yield bcrypt.hash.bind(bcrypt, info.pass, null, null);
-      if(user && user.password && (yield bcrypt.compare.bind(bcrypt, user.password, hash))) {
-        return yield next;
+      user = yield collection.findOne({"name": info.name});
+      if(user && user.password && (bcrypt.compareSync(info.pass, user.password))) {
+        yield next;
+        return;
       }
       //try to authenticate by token
       //get collection
       collection = yield this.storage.collection("_accessTokens");
       //find access token by token id
       token = yield collection.findById(info.pass);
-      if(token === "*") {
-        yield next;
-      } else {
-        if(token.scopes.indexOf(requiredScope) === -1) {
-          this.status = 401;
-          this.body = {
-            message: "Failed to authenticate using either user/pass nor token",
-            status: "error",
-            code: Constants.errors.AUTH_FAILED
-          };
+      if(token) {
+        if(token.scopes === "*" || token.scopes.indexOf(requiredScope) > -1) {
+          yield next;
           return;
         }
-        yield next;
       }
+      this.status = 401;
+      this.body = {
+        message: "Failed to authenticate using either user/pass nor token",
+        status: "error",
+        code: Constants.errors.AUTH_FAILED
+      };
     } else {
       this.status = 401;
       this.body = {

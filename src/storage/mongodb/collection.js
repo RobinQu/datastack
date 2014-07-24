@@ -1,6 +1,5 @@
 var debug = require("debug")("mongo:collection"),
-    _ = require("lodash"),
-    co = require("co");
+    _ = require("lodash");
 
 var CollectionAdapter = function(col) {
   this._col = col;
@@ -10,6 +9,7 @@ CollectionAdapter.prototype.find = function(query, projections) {
   var self = this;
   return function*() {
     query[this.storage.archiveKey] = false;
+    debug("find by %o", query);
     return self._col.find(query, projections);
   };
 };
@@ -18,20 +18,24 @@ CollectionAdapter.prototype.findById = function(id, ref) {
   var self = this;
   return function*() {
     var query = this.storage.buildSimpleQuery(id, ref);
-    debug("find one by %o", query);
+    debug("find by id %o", query);
     return yield self._col.findOne(query);
   };
 };
 
-CollectionAdapter.prototype.findOne = function(query, projections) {
-  query[this.storage.archivedKey] = false;
-  return this._col.findOne(query, projections);
+CollectionAdapter.prototype.findOne = function(query) {
+  var self = this, args = Array.prototype.slice.call(arguments);
+  return function*() {
+    query[this.storage.archiveKey] = false;
+    debug("find one by %o", query);
+    return yield self._col.findOne.apply(self._col, args);
+  };
 };
 
 CollectionAdapter.prototype.updateById = function (id, update) {
   var self = this;
   
-  return co(function*() {
+  return function*() {
     var query = this.storage.buildSimpleQuery(id);
     update = this.storage.handleUpdateValue(update);
     debug("update by id %s, %o", id, update);
@@ -48,7 +52,7 @@ CollectionAdapter.prototype.updateById = function (id, update) {
       // console.log(original);
       yield self._col.insert(original);
     }
-  });
+  };
 };
 
 CollectionAdapter.prototype.removeOne = function (id, ref) {

@@ -1,8 +1,10 @@
-/*global describe, it, after */
+/*global describe, it, after, before */
 var datastack = require(".."),
     PORT = process.env.PORT || 8888,
     request = require("superagent"),
     koa = require("koa"),
+    bcrypt = require("bcrypt-nodejs"),
+    co = require("co"),
     expect = require("chai").expect;
 
 describe("auth plugin", function () {
@@ -49,6 +51,65 @@ describe("auth plugin", function () {
         done();
       });
     });
+    
+  });
+  
+  describe("user/password auth", function () {
+    
+    var app = koa(), server, uri;
+    datastack(app, {
+      storage: {
+        type: "mongodb",
+        uri: "mongodb://127.0.0.1:27017/datastack-test"
+      }
+    });
+    uri = "http://localhost:" + PORT + "/books";
+    
+    before(function (done) {
+      co(function*() {
+        //using mongo to remove all users
+        var mongo = require("co-mongo");
+        var db = yield mongo.connect("mongodb://127.0.0.1:27017/datastack-test");
+        var col = yield db.collection("_users");
+        yield col.remove();
+        
+        
+        //using storage plugin to insert a user
+        var user = {
+          password: bcrypt.hashSync("123456"),
+          name: "robin",
+          _archived: false
+        };
+        yield col.insert(user);
+      })(function (e) {
+        if(e) {
+          console.log(e.stack);
+        }
+        server = app.listen(PORT, done);
+      });
+    });
+    
+    after(function (done) {
+      server.close(done);
+    });
+    
+    app.use(datastack.resource({name: "books", auth: true}).middleware());
+    
+    it("should block all requests without basic auth", function (done) {
+      request.get(uri, function (res) {
+        expect(res.status).to.equal(401);
+        expect(res.body.status).to.equal("error");
+        done();
+      });
+    });
+    
+    it("should allow requets with valid basic auth info", function (done) {
+      request.get(uri).auth("robin", "123456").end(function (res) {
+        expect(res.status).to.equal(200);
+        done();
+      });
+    });
+    
     
   });
   
