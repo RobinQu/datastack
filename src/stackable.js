@@ -1,11 +1,10 @@
 module.exports = function(app, options) {
   options = options || {};
   require("./pluggable")(app);
-  var plugins = require("./plugin");
-  app.plugin(new plugins.Master());
-  app.plugin(new plugins.Storage(options.storage));
-  app.plugin(new plugins.Notifier(options.notifier));
-  app.plugin(new plugins.Cluster());
-  app.plugin(new plugins.Auth(options.authenticator));
+  app.install("master");
+  app.install("resource");
+  app.install("storage", options.storage);
+  app.install("notifier", options.notifier);
+  app.install("cluster");
   return app;
 };

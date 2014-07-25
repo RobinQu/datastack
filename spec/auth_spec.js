@@ -13,7 +13,6 @@ describe("auth plugin", function () {
   describe("custom authenticate logic", function () {
     var app = koa(), auth, uri, server;
     
-    
     uri = "http://localhost:" + PORT + "/books";
     auth = function () {
       return function *() {
@@ -26,10 +25,10 @@ describe("auth plugin", function () {
     };
     
     datastack(app, {
-      storage: {type: "memory"},
-      authenticator: {auth:auth}
+      storage: {type: "memory"}
     });
-    app.use(datastack.resource({auth: true, name: "books"}).middleware());
+    app.install("auth", {auth:auth});
+    app.use(datastack.resource({name: "books"}).middleware());
     
     server = app.listen(PORT);
     
@@ -64,6 +63,7 @@ describe("auth plugin", function () {
         uri: "mongodb://127.0.0.1:27017/datastack-test"
       }
     });
+    app.install("auth");
     uri = "http://localhost:" + PORT + "/books";
     
     before(function (done) {
@@ -94,7 +94,7 @@ describe("auth plugin", function () {
       server.close(done);
     });
     
-    app.use(datastack.resource({name: "books", auth: true}).middleware());
+    app.use(datastack.resource({name: "books"}).middleware());
     
     it("should block all requests without basic auth", function (done) {
       request.get(uri, function (res) {
@@ -123,8 +123,9 @@ describe("auth plugin", function () {
         uri: "mongodb://127.0.0.1:27017/datastack-test"
       }
     });
+    app.install("auth");
     uri = "http://localhost:" + PORT + "/books";
-    app.use(datastack.resource({name: "books", auth: true}).middleware());
+    app.use(datastack.resource({name: "books"}).middleware());
     token = UUID.v4();
     token2 = UUID.v4();
     before(function (done) {
@@ -145,8 +146,6 @@ describe("auth plugin", function () {
           scopes: ["books:index"],
           _archived: false
         });
-        
-        console.log(yield col.find().toArray());
       })(function () {
         server = app.listen(PORT, done);
       });
@@ -170,6 +169,7 @@ describe("auth plugin", function () {
         expect(res.status).to.equal(200);
         done();
       });
+      
     });
     
     it("should reject requests without correct token", function (done) {

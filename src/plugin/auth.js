@@ -8,13 +8,14 @@ var Plugin = require("./plugin"),
 /**
  * Authentication plugin
  * @author robinqu
- * @requires StoragePlugin
+ * @requires StoragePlugin, ResourcePlugin
  */
 var AuthPlugin = function(options) {
   options = options || {};
   Plugin.call(this);
   this.name = "authenticator";
   this.auth = options.auth || AuthPlugin.BasicTokenAuthenticate;
+  this.grant = options.grant || AuthPlugin.BasicAuthGrant;
 };
 
 util.inherits(AuthPlugin, Plugin);
@@ -23,10 +24,11 @@ AuthPlugin.prototype.expose = function() {
   return this;
 };
 
-AuthPlugin.prototype.middleware = function (collection, action) {
-  return this.auth(collection, action);
+AuthPlugin.prototype.init = function(app) {
+  //register before advice
+  app.resource.before(this.auth);
+  // app.use(this.grant());
 };
-
 
 /*
  * @requires StoragePlugin
@@ -72,6 +74,12 @@ AuthPlugin.BasicTokenAuthenticate = function (collectionName, action) {
         code: Constants.errors.AUTH_REQUIRED
       };
     }
+  };
+};
+
+AuthPlugin.BasicAuthGrant = function() {
+  return function*() {
+    
   };
 };
 

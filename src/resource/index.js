@@ -1,69 +1,13 @@
 var Router = require("koa-router"),
-    middlewares = require("./middleware"),
+    middlewares = require("../middleware"),
     lingo = require("lingo"),
     assert = require("assert"),
     _ = require("lodash"),
     util = require("util"),
-    Constants = require("./constants");
+    RefResource = require("./ref"),
+    co = require("co"),
+    Constants = require("../constants");
 
-var RefResource = function(resource) {
-  this.debug = resource.debug;
-  this.collection = resource.name;
-  this.id = resource.id.bind(resource);
-  this.parentPattern = resource.pattern("get")[1];
-};
-
-RefResource.prototype.index = function() {
-  var self = this;
-  return function*() {
-    self.debug("versions");
-    var collection = yield this.collection(self.collection);
-    this.body = yield collection.versions(self.id(this));
-  };
-};
-
-RefResource.prototype.get = function() {
-  var self = this;
-  return function*() {
-    var id = self.id(this);
-    self.debug("get %s, %s", id, this.params.ref);
-    var collection = yield this.collection(self.collection);
-    var one = yield collection.findById(id, this.params.ref);
-
-    if(one) {
-      this.identify(one);
-      this.body = one;
-    }
-  };
-};
-
-RefResource.prototype.del = function() {
-  var self = this;
-  return function*() {
-    var id = self.id(this);
-    self.debug("del %s, %s", id, this.params.ref);
-    var collection = yield this.collection(self.collection);
-    yield collection.removeOne(id, this.params.ref);
-    this.app.sync(Constants.events.DELETE, {
-      collection: self.collection,
-      data: {
-        id: this.params.id,
-        ref: this.params.ref
-      }
-    });
-    this.status = 204;
-  };
-};
-
-RefResource.prototype.pattern = function(action) {
-  switch(action) {
-  case "index":
-    return ["get", util.format("%s/_refs", this.parentPattern)];
-  case "get":
-  case "del":
-    return [action, util.format("%s/_refs/:ref", this.parentPattern)];
-  }
-};
 
 var StackResource = function(options) {
   if(!(this instanceof StackResource)) {
@@ -83,9 +27,7 @@ var StackResource = function(options) {
   this.prior = options.prior || [];
   //setup routes
   this.route();
-  
 };
-
 
 StackResource.prototype.middleware = function() {
   return this.router.middleware();
@@ -120,15 +62,19 @@ StackResource.prototype.route = function() {
         pattern = pattern.concat(self.prior);
       }
     }
-    if(self.auth) {
-      //insert auth middleware
-      pattern.push(function*auth(next) {
-        yield this.app.authenticator.auth(self.name, action).call(this, next);
-      });
-    }
+    //insert before advice middlewares
+    pattern.push(function*befreAdvice(next) {
+      self.debug("before advice");
+      yield this.app.resource.middleware("before", self.name, action).call(this, next);
+    });
     // self.debug("additional middlewares %s for %s, %s", pattern.length, self.name, action);
     //insert action middleware
     args = pattern.concat(target[action]());
+    args.push(function*afterAdvice() {
+      self.debug("after advice");
+      //after advice should not wait, and we don't care the result
+      co(this.app.resource.middleware("afeter", self.name, action)).call(this);
+    });
     //register route
     self.router[pattern[0]].apply(self.router, args);
   };

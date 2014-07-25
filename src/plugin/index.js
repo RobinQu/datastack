@@ -1,13 +1,15 @@
 module.exports = {
   
-  Master: require("./master"),
+  "master": require("./master"),
   
-  Notifier: require("./notifier"),
+  "notifier": require("./notifier"),
   
-  Storage: require("./storage"),
+  "storage": require("./storage"),
   
-  Cluster: require("./cluster"),
+  "cluster": require("./cluster"),
   
-  Auth: require("./auth")
+  "auth": require("./auth"),
+  
+  "resource": require("./resource")
   
 };

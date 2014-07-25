@@ -5,8 +5,10 @@ require("pkginfo")(module, "version");
 
 datastack.Constants = require("./constants");
 
-datastack.resource = require("./stack_resource");
+datastack.resource = require("./resource");
 
 datastack.app = require("./stack_app");
 
 datastack.cluster = require("./stack_cluster");
+
+datastack.Plugin = require("./plugin/plugin");

@@ -1,4 +1,5 @@
-var debug = require("debug")("pluggable");
+var debug = require("debug")("pluggable"),
+    plugins = require("./plugin");
 
 var Pluggable = function() {
   
@@ -12,23 +13,8 @@ var Pluggable = function() {
         return p.name === plugin;
       });
     } else {
-      debug("hook plugin %s", plugin.name);
-      this.plugins.push(plugin);
-      plugin.signal("init", this);
-    }
-    
-    //if we should expose something onto the `app` instance
-    if(typeof plugin.expose === "function") {
-      debug("expose %s to koa context", plugin.name);
-      Object.defineProperty(app, plugin.name, {
-        get: function() {
-          return plugin.expose();
-        },
-        enumerable: true,
-        configurable: false
-      });
-    }
-    
+      app.install(plugin);
+    }    
     return plugin;
   };
   
@@ -48,6 +34,33 @@ var Pluggable = function() {
         debug(e);
       }
     }
+  };
+  
+  app.install = function(name, options) {
+    var plugin, Plugin;
+    if(typeof name === "string") {//install by name
+      Plugin = plugins[name];
+      plugin = new Plugin(options);
+    } else {//assuming `name` is a plugin instance
+      plugin = name;
+      name = plugin.name;
+    }
+    debug("hook plugin %s", name);
+    this.plugins.push(plugin);
+    plugin.signal("init", this);
+    
+    //if we should expose something onto the `app` instance
+    if(typeof plugin.expose === "function") {
+      debug("expose %s to koa context", plugin.name);
+      Object.defineProperty(app, plugin.name, {
+        get: function() {
+          return plugin.expose();
+        },
+        enumerable: true,
+        configurable: false
+      });
+    }
+    return plugin;
   };
 };
 
