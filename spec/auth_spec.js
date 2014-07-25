@@ -184,4 +184,52 @@ describe("auth plugin", function () {
     
   });
   
+  describe("Grant middleware", function() {
+    
+    var app = koa(), server, uri, store = {};
+    datastack(app, {
+      storage: {type: "memory", store: store }
+    });
+    app.install("auth");
+    
+    before(function(done) {
+      server = app.listen(PORT, done);
+    });
+    after(function(done) {
+      server.close(done);
+    });
+    
+    uri = "http://localhost:" + PORT + "/_grant";
+    
+    it("should create a user/pass grant", function(done) {
+      request.post(uri).send({
+        type: "user",
+        name: "robin",
+        password: "123456"
+      }).end(function(res) {
+        expect(res.status).to.equal(201);
+        expect(store._users.data.length).to.equal(1);
+        expect(store._users.data[0].name).to.equal("robin");
+        expect(bcrypt.compareSync("123456", store._users.data[0].password)).to.be.ok;
+        done();
+      });
+    });
+    
+    it("should create a token grant", function(done) {
+      request.post(uri).send({
+        type: "token",
+        scopes: "*"
+      }).end(function(res) {
+        expect(res.status).to.equal(201);
+        expect(res.body.token).to.be.ok;
+        expect(res.body.scopes).to.equal("*");
+        expect(store._accessTokens.data.length).to.equal(1);
+        expect(store._accessTokens.data[0].id).to.equal(res.body.token);
+        expect(store._accessTokens.data[0].scopes).to.equal("*");
+        done();
+      });
+    });
+    
+  });
+  
 });

@@ -19,6 +19,9 @@ var StackApp = function(server, options) {
   koa.call(this);
   stackable(this, options);
   this.server = server;
+  if(options.auth) {//enable the auth plugin
+    this.install("auth");
+  }
 };
 
 util.inherits(StackApp, koa);

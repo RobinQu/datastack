@@ -4,7 +4,8 @@ module.exports = {
     BAD_REQUEST: 1,
     BAD_QUERY_PARAMETER: 2,
     AUTH_REQUIRED: 3,
-    AUTH_FAILED: 4
+    AUTH_FAILED: 4,
+    GRANT_REQUIRED: 5
   },
   
   events: {

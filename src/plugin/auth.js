@@ -1,8 +1,10 @@
 var Plugin = require("./plugin"),
     debug = require("debug")("plugin:auth"),
     util = require("util"),
+    UUID = require("node-uuid"),
     bcrypt = require("bcrypt-nodejs"),
     Constants = require("../constants"),
+    Router = require("koa-router"),
     auth = require("basic-auth");
     
 /**
@@ -27,7 +29,7 @@ AuthPlugin.prototype.expose = function() {
 AuthPlugin.prototype.init = function(app) {
   //register before advice
   app.resource.before(this.auth);
-  // app.use(this.grant());
+  app.use(this.grant());
 };
 
 /*
@@ -37,10 +39,11 @@ AuthPlugin.BasicTokenAuthenticate = function (collectionName, action) {
   //scope is named as "{collectionName}:{actionName}"
   var requiredScope = util.format("%s:%s", collectionName, action);
   return function*(next) {
-    debug("basick token auth '%s'", this.get("authorization"));
+    debug("auth");
     var info = auth(this), token, collection, user;
     if(info && info.name && info.pass) {
       if(info.pass === "x-oauth-basic") {//token auth
+        debug("token auth");
         //try to authenticate by token
         //get collection
         collection = yield this.storage.collection("_accessTokens");
@@ -53,6 +56,7 @@ AuthPlugin.BasicTokenAuthenticate = function (collectionName, action) {
           }
         }
       }
+      debug("user/password auth");
       //auth by user name and password
       collection = yield this.storage.collection("_users");
       user = yield collection.findOne({"name": info.name});
@@ -78,9 +82,37 @@ AuthPlugin.BasicTokenAuthenticate = function (collectionName, action) {
 };
 
 AuthPlugin.BasicAuthGrant = function() {
-  return function*() {
+  var router = new Router();
+  router.post("/_grant", function*() {
+    debug("grant");
+    var grant = this.request.body, collection, data = {};
+    this.status = 201;
+    if(grant && grant.type === "user" && grant.name && grant.password) {
+      collection = yield this.storage.collection("_users");
+      data.name = grant.name;
+      data.password = bcrypt.hashSync(grant.password);
+      yield collection.insert(data);
+      return;
+    }
     
-  };
+    if(grant && grant.type === "token" && grant.scopes && (grant.scopes === "*" || util.isArray(grant.scopes))) {
+      collection = yield this.storage.collection("_accessTokens");
+      data[this.storage.idKey] = UUID.v4();
+      data.scopes = grant.scopes;
+      yield collection.insert(data);
+      this.body = {token:data[this.storage.idKey], scopes: data.scopes};
+      return;
+    }
+    
+    this.body = {
+      status: "error",
+      code: Constants.errors.GRANT_REQUIRED,
+      message: "missing grant info or grant info is incorrect"
+    };
+    this.status = 400;
+    return;
+  });
+  return router.middleware();
 };
 
 module.exports = AuthPlugin;
