@@ -19,7 +19,8 @@ describe("Websocket", function() {
     datastack(app, {
       storage: {type:"memory"}
     });
-    app.use(datastack.resource("books").middleware());
+    // app.use(datastack.resource("books").middleware());
+    app.resource("books");
     
     var client, messageCallback;
     
@@ -168,7 +169,8 @@ describe("Websocket", function() {
     datastack(app,{
       storage: {type:"memory"}
     });
-    app.use(datastack.resource("books").middleware());
+    // app.use(datastack.resource("books").middleware());
+    app.resource("books");
     
     it("should stop publish after closed", function(done) {
       

@@ -1,6 +1,6 @@
 {
   "name": "datastack",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CloudKit implementation in Node",
   "main": "./src/datastack.js",
   "scripts": {

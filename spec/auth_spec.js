@@ -11,10 +11,10 @@ var datastack = require(".."),
 describe("auth plugin", function () {
   
   describe("custom authenticate logic", function () {
-    var app = koa(), auth, uri, server;
+    var app = koa(), keystone = {}, uri, server;
     
     uri = "http://localhost:" + PORT + "/books";
-    auth = function () {
+    keystone.auth = function () {
       return function *() {
         if(this.method.toUpperCase() === "GET") {
           this.body = "ok";
@@ -23,11 +23,10 @@ describe("auth plugin", function () {
         }
       };
     };
-    
     datastack(app, {
       storage: {type: "memory"}
     });
-    app.install("auth", {auth:auth});
+    app.install("auth", {keystone:keystone});
     app.use(datastack.resource({name: "books"}).middleware());
     
     server = app.listen(PORT);

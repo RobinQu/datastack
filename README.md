@@ -19,8 +19,8 @@ Building your API like a pro:
         uri: "mongodb://127.0.0.1:27017/zoo"
       }
     });
-    app.use(datastack.resource("cat"));
-    app.use(datastack.resource("dog"));
+    app.resource("cats");
+    app.resource("dogs");
     app.listen(porcess.env.PORT || 8888);
 
 
