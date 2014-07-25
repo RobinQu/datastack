@@ -3,7 +3,6 @@ var koa = require("koa"),
     https = require("https"),
     util = require("util"),
     debug = require("debug")("app"),
-    mount = require("koa-mount"),
     stackable = require("./stackable");
 
 var StackApp = function(server, options) {
@@ -46,15 +45,6 @@ StackApp.prototype.dispose = function () {
   } catch(e) {}
 };
 
-StackApp.prototype.resource = function (options) {
-  var resource = require("./stack_resource")(options);
-  if(options.prefix) {
-    this.use(mount(options.prefix, resource.middleware()));
-  } else {
-    this.use(resource.middleware());
-  }
-  this.notifier.register(resource.name);
-  return resource;
-};
+
 
 module.exports = StackApp;

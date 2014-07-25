@@ -65,15 +65,21 @@ StackResource.prototype.route = function() {
     //insert before advice middlewares
     pattern.push(function*befreAdvice(next) {
       self.debug("before advice");
-      yield this.app.resource.middleware("before", self.name, action).call(this, next);
+      if(this.app.resource) {
+        yield this.app.resource.middleware("before", self.name, action).call(this, next);
+      } else {
+        yield next;
+      }
     });
     // self.debug("additional middlewares %s for %s, %s", pattern.length, self.name, action);
     //insert action middleware
     args = pattern.concat(target[action]());
     args.push(function*afterAdvice() {
-      self.debug("after advice");
-      //after advice should not wait, and we don't care the result
-      co(this.app.resource.middleware("afeter", self.name, action)).call(this);
+      if(this.app.resource) {
+        self.debug("after advice");
+        //after advice should not wait, and we don't care the result
+        co(this.app.resource.middleware("afeter", self.name, action)).call(this);
+      }
     });
     //register route
     self.router[pattern[0]].apply(self.router, args);

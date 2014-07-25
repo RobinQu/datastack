@@ -29,11 +29,16 @@ NotifierPlugin.prototype.init = function (app) {
   
   //bind all events
   var events = [Constants.events.CREATE, Constants.events.UPDATE, Constants.events.DELETE],
-      i, len;
+      i, len, self = this;
   
   for(i=0,len=events.length; i<len; i++) {
     app.on(events[i], this.notify.bind(this, events[i]));
   }
+  
+  //register resources upon creation
+  app.plugin("resource").on("create", function(resource) {
+    self.notifier.register(resource.name);
+  });
   
   return this;
 };
