@@ -38,23 +38,25 @@ AuthPlugin.BasicTokenAuthenticate = function (collectionName, action) {
     debug("basick token auth '%s'", this.get("authorization"));
     var info = auth(this), token, collection, user;
     if(info && info.name && info.pass) {
+      if(info.pass === "x-oauth-basic") {//token auth
+        //try to authenticate by token
+        //get collection
+        collection = yield this.storage.collection("_accessTokens");
+        //find access token by token id
+        token = yield collection.findById(info.name);
+        if(token) {
+          if(token.scopes === "*" || token.scopes.indexOf(requiredScope) > -1) {
+            yield next;
+            return;
+          }
+        }
+      }
       //auth by user name and password
       collection = yield this.storage.collection("_users");
       user = yield collection.findOne({"name": info.name});
       if(user && user.password && (bcrypt.compareSync(info.pass, user.password))) {
         yield next;
         return;
-      }
-      //try to authenticate by token
-      //get collection
-      collection = yield this.storage.collection("_accessTokens");
-      //find access token by token id
-      token = yield collection.findById(info.pass);
-      if(token) {
-        if(token.scopes === "*" || token.scopes.indexOf(requiredScope) > -1) {
-          yield next;
-          return;
-        }
       }
       this.status = 401;
       this.body = {

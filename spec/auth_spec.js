@@ -5,6 +5,7 @@ var datastack = require(".."),
     koa = require("koa"),
     bcrypt = require("bcrypt-nodejs"),
     co = require("co"),
+    UUID = require("node-uuid"),
     expect = require("chai").expect;
 
 describe("auth plugin", function () {
@@ -110,6 +111,76 @@ describe("auth plugin", function () {
       });
     });
     
+    
+  });
+  
+  describe("access token auth", function () {
+    
+    var app = koa(), server, uri, token, token2;
+    datastack(app, {
+      storage: {
+        type: "mongodb",
+        uri: "mongodb://127.0.0.1:27017/datastack-test"
+      }
+    });
+    uri = "http://localhost:" + PORT + "/books";
+    app.use(datastack.resource({name: "books", auth: true}).middleware());
+    token = UUID.v4();
+    token2 = UUID.v4();
+    before(function (done) {
+      co(function*() {
+        //using mongo to remove all users
+        var mongo = require("co-mongo");
+        var db = yield mongo.connect("mongodb://127.0.0.1:27017/datastack-test");
+        var col = yield db.collection("_accessTokens");
+        yield col.remove();
+        yield col.insert({
+          _storeKey: token,
+          scopes: "*",
+          _archived: false
+        });
+        
+        yield col.insert({
+          _storeKey: token2,
+          scopes: ["books:index"],
+          _archived: false
+        });
+        
+        console.log(yield col.find().toArray());
+      })(function () {
+        server = app.listen(PORT, done);
+      });
+    });
+    
+    after(function (done) {
+      server.close(done);
+    });
+    
+    it("should allow requests with correct token in header, matching '*' scopes", function (done) {
+      
+      request.get(uri).auth(token, "x-oauth-basic").end(function (res) {
+        expect(res.status).to.equal(200);
+        done();
+      });
+      
+    });
+    
+    it("should allow requests with correct token in header, matching specfic scopes", function (done) {
+      request.get(uri).auth(token2, "x-oauth-basic").end(function (res) {
+        expect(res.status).to.equal(200);
+        done();
+      });
+    });
+    
+    it("should reject requests without correct token", function (done) {
+      
+      request.get(uri).end(function (res) {
+        expect(res.status).to.equal(401);
+        expect(res.body.status).to.equal("error");
+        done();
+      });
+      
+    });
     
   });
   
