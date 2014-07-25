@@ -40,10 +40,10 @@ Fundalmentally `datastack` is a web middleware that is powered by `koa` and its 
 
 ## Roadmap
 
-* [Alpha](https://github.com/RobinQu/datastack/issues?milestone=1&state=open) July 6, 2014
-* [Beta](https://github.com/RobinQu/datastack/issues?milestone=2&state=open) July 13, 2014
-* [Theta](https://github.com/RobinQu/datastack/issues?milestone=3&state=open) July 20, 2014
-* [Delta](https://github.com/RobinQu/datastack/issues?milestone=4&state=open) July 27, 2014
+* √ [Alpha](https://github.com/RobinQu/datastack/issues?milestone=1&state=open) 
+* √ [Beta](https://github.com/RobinQu/datastack/issues?milestone=2&state=open)
+* ♨︎ [Theta](https://github.com/RobinQu/datastack/issues?milestone=3&state=open) July 27, 2014
+* ♨︎ [Delta](https://github.com/RobinQu/datastack/issues?milestone=4&state=open) Aug 10, 2014
 
 ## License
 
