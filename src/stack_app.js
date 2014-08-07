@@ -35,7 +35,9 @@ StackApp.prototype.listen = function () {
   }
   this.server.listen.apply(this.server, arguments);
   this.server.on("listening", this.signal.bind(this, "listening", this.server));
-  this.notifier.hook(this.server);
+  if(this.notifier.hook) {
+    this.notifier.hook(this.server);
+  }
   return this.server;
 };
 

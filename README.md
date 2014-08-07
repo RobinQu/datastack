@@ -2,6 +2,9 @@
 
 [![Build Status](https://travis-ci.org/RobinQu/datastack.svg?branch=master)](https://travis-ci.org/RobinQu/datastack)
 
+[![NPM](https://nodei.co/npm/datastack.png?downloads=true&stars=true)](https://nodei.co/npm/datastack/)
+
+
 Human-friendly RESTful middlewares for koa
 
 ## TL;DR

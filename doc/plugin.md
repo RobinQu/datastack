@@ -30,7 +30,7 @@ Optional plugins:
 
 ### app.install(nameOrPlugin, [options])
 
-* `nameOrPlugin: install a plugin with name of built-in plugin or a plugin instance
+* `nameOrPlugin`: install a plugin with name of built-in plugin or a plugin instance
 * `options`: if a plugin name is given, this option hash will be used to construct the actual plugin
 
 ### app.plugin(nameOrPlugin)

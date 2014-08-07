@@ -9,6 +9,7 @@ var debug = require("debug")("notifier:websocket"),
     EE = require("events").EventEmitter;
 
 
+
 var WebsocketServer = function() {
   EE.call(this);
   // store the clients
